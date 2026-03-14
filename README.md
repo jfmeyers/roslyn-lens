@@ -65,6 +65,8 @@ Instead of reading entire `.cs` files (500-2000+ tokens each), Claude Code queri
 
 ## Installation
 
+[![NuGet](https://img.shields.io/nuget/v/JFM.RoslynNavigator)](https://www.nuget.org/packages/JFM.RoslynNavigator/)
+
 ```bash
 dotnet tool install --global JFM.RoslynNavigator
 ```
@@ -153,6 +155,10 @@ Key design decisions:
 ## Acknowledgments
 
 Inspired by [CWM.RoslynNavigator](https://github.com/codewithmukesh/dotnet-claude-kit/tree/main/mcp/CWM.RoslynNavigator) by Mukesh Murugan (MIT License). Adapted with additional detectors, auto-discovery, and global tool distribution.
+
+## Documentation
+
+Full documentation is available in the [docs/](docs/README.md) directory.
 
 ## License
 
