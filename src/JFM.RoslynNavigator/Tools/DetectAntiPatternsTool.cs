@@ -45,20 +45,32 @@ public static class DetectAntiPatternsTool
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (violations.Count >= maxResults) break;
-
-                if (!MatchesFileFilter(tree, file)) continue;
-
-                var model = compilation.GetSemanticModel(tree);
-                AnalyzeTree(model, tree, detectorList, severity, maxResults, violations, ct);
-            }
+            AnalyzeCompilation(compilation, file, detectorList, severity, maxResults, violations, ct);
         }
 
         var result = new AntiPatternsResult(violations, violations.Count);
         return JsonSerializer.Serialize(result);
+    }
+
+    private static void AnalyzeCompilation(
+        Compilation compilation,
+        string? file,
+        List<IAntiPatternDetector> detectors,
+        string severity,
+        int maxResults,
+        List<AntiPatternEntry> violations,
+        CancellationToken ct)
+    {
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (violations.Count >= maxResults) break;
+
+            if (!MatchesFileFilter(tree, file)) continue;
+
+            var model = compilation.GetSemanticModel(tree);
+            AnalyzeTree(model, tree, detectors, severity, maxResults, violations, ct);
+        }
     }
 
     private static bool MatchesFileFilter(SyntaxTree tree, string? file)

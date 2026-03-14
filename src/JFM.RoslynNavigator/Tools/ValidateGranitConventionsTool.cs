@@ -71,7 +71,7 @@ public static class ValidateGranitConventionsTool
                 continue;
             }
 
-            await AnalyzeCompilationAsync(compilation, project, file, checkCategory, violations, ct);
+            await AnalyzeCompilationAsync(compilation, file, checkCategory, violations, ct);
         }
 
         var byCategory = violations
@@ -84,7 +84,6 @@ public static class ValidateGranitConventionsTool
 
     private static async Task AnalyzeCompilationAsync(
         Compilation compilation,
-        Project project,
         string? file,
         string checkCategory,
         List<ConventionViolation> violations,
@@ -212,20 +211,18 @@ public static class ValidateGranitConventionsTool
                 continue;
             }
 
-            foreach (var prefix in genericPrefixes)
+            var matchedPrefix = genericPrefixes.FirstOrDefault(p => name == p + "Request" || name == p + "Response");
+            if (matchedPrefix is not null)
             {
-                if (name == prefix + "Request" || name == prefix + "Response")
-                {
-                    var line = typeDecl.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    yield return new ConventionViolation(
-                        CategoryNaming,
-                        "GR-ENDPOINT-PREFIX",
-                        "Warning",
-                        $"Endpoint DTO '{name}' uses a generic name — OpenAPI flattens namespaces causing schema conflicts",
-                        filePath,
-                        line,
-                        $"Prefix with module context (e.g. 'Workflow{name}' instead of '{name}')");
-                }
+                var line = typeDecl.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                yield return new ConventionViolation(
+                    CategoryNaming,
+                    "GR-ENDPOINT-PREFIX",
+                    "Warning",
+                    $"Endpoint DTO '{name}' uses a generic name — OpenAPI flattens namespaces causing schema conflicts",
+                    filePath,
+                    line,
+                    $"Prefix with module context (e.g. 'Workflow{name}' instead of '{name}')");
             }
         }
     }
