@@ -19,21 +19,7 @@ public static class SymbolResolver
         var solution = workspace.GetSolution();
         if (solution is null) return [];
 
-        var isGlob = name.Contains('*') || name.Contains('?');
-        Func<string, bool> namePredicate;
-
-        if (isGlob)
-        {
-            var pattern = "^" + Regex.Escape(name).Replace("\\*", ".*").Replace("\\?", ".") + "$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-            namePredicate = n => regex.IsMatch(n);
-        }
-        else
-        {
-            namePredicate = n => n.Equals(name, StringComparison.Ordinal) ||
-                                 n.Equals(name, StringComparison.OrdinalIgnoreCase);
-        }
-
+        var namePredicate = BuildNamePredicate(name);
         var results = new List<ISymbol>();
         var seen = new HashSet<string>();
 
@@ -49,13 +35,22 @@ public static class SymbolResolver
                 if (kind is not null && !MatchesKind(symbol, kind))
                     continue;
 
-                var displayString = symbol.ToDisplayString();
-                if (seen.Add(displayString))
+                if (seen.Add(symbol.ToDisplayString()))
                     results.Add(symbol);
             }
         }
 
         return results;
+    }
+
+    private static Func<string, bool> BuildNamePredicate(string name)
+    {
+        if (!name.Contains('*') && !name.Contains('?'))
+            return n => n.Equals(name, StringComparison.OrdinalIgnoreCase);
+
+        var pattern = "^" + Regex.Escape(name).Replace("\\*", ".*").Replace("\\?", ".") + "$";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromSeconds(5));
+        return n => regex.IsMatch(n);
     }
 
     public static async Task<ISymbol?> ResolveSymbolAsync(
@@ -164,7 +159,6 @@ public static class SymbolResolver
         string? kind = null,
         CancellationToken ct = default)
     {
-        // Step 1: exact match
         var exact = await FindSymbolsByNameAsync(workspace, name, kind, ct);
         if (exact.Count > 0)
             return exact.Select(s => (s, "exact")).ToList();
@@ -173,8 +167,6 @@ public static class SymbolResolver
         if (solution is null) return [];
 
         var candidates = new List<(ISymbol Symbol, string MatchQuality, int Score)>();
-
-        // Extract the short name (last segment after '.')
         var shortName = name.Contains('.') ? name[(name.LastIndexOf('.') + 1)..] : name;
 
         foreach (var project in solution.Projects)
@@ -182,53 +174,56 @@ public static class SymbolResolver
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            // Step 2: partial namespace match — find by short name, then check FQN contains the query
-            var symbols = compilation.GetSymbolsWithName(
-                n => n.Equals(shortName, StringComparison.OrdinalIgnoreCase),
-                SymbolFilter.All, ct);
-
-            foreach (var symbol in symbols)
-            {
-                if (kind is not null && !MatchesKind(symbol, kind)) continue;
-
-                var fqn = symbol.ToDisplayString();
-
-                if (name.Contains('.') && fqn.Contains(name, StringComparison.OrdinalIgnoreCase))
-                {
-                    candidates.Add((symbol, "partial_namespace", 1));
-                }
-                else if (shortName.Equals(symbol.Name, StringComparison.OrdinalIgnoreCase) && shortName != name)
-                {
-                    candidates.Add((symbol, "short_name", 2));
-                }
-            }
-
-            // Step 3: Levenshtein for typo tolerance (only for non-dotted names)
-            if (!name.Contains('.') && candidates.Count == 0)
-            {
-                var allSymbols = compilation.GetSymbolsWithName(_ => true, SymbolFilter.All, ct);
-                foreach (var symbol in allSymbols)
-                {
-                    if (kind is not null && !MatchesKind(symbol, kind)) continue;
-
-                    var distance = LevenshteinDistance(name, symbol.Name);
-                    var maxAllowed = name.Length > 5 ? 2 : 1;
-                    if (distance > 0 && distance <= maxAllowed)
-                    {
-                        candidates.Add((symbol, "fuzzy", 3 + distance));
-                    }
-                }
-            }
+            CollectPartialMatches(compilation, name, shortName, kind, candidates, ct);
+            CollectFuzzyMatches(compilation, name, kind, candidates, ct);
         }
 
-        // Deduplicate and sort by score
         var seen = new HashSet<string>();
         return candidates
-            .OrderBy(c => c.Score)
             .Where(c => seen.Add(c.Symbol.ToDisplayString()))
+            .OrderBy(c => c.Score)
             .Select(c => (c.Symbol, c.MatchQuality))
             .Take(10)
             .ToList();
+    }
+
+    private static void CollectPartialMatches(
+        Compilation compilation, string name, string shortName, string? kind,
+        List<(ISymbol Symbol, string MatchQuality, int Score)> candidates, CancellationToken ct)
+    {
+        var symbols = compilation.GetSymbolsWithName(
+            n => n.Equals(shortName, StringComparison.OrdinalIgnoreCase),
+            SymbolFilter.All, ct);
+
+        foreach (var symbol in symbols)
+        {
+            if (kind is not null && !MatchesKind(symbol, kind)) continue;
+
+            var fqn = symbol.ToDisplayString();
+            if (name.Contains('.') && fqn.Contains(name, StringComparison.OrdinalIgnoreCase))
+                candidates.Add((symbol, "partial_namespace", 1));
+            else if (shortName.Equals(symbol.Name, StringComparison.OrdinalIgnoreCase) && shortName != name)
+                candidates.Add((symbol, "short_name", 2));
+        }
+    }
+
+    private static void CollectFuzzyMatches(
+        Compilation compilation, string name, string? kind,
+        List<(ISymbol Symbol, string MatchQuality, int Score)> candidates, CancellationToken ct)
+    {
+        if (name.Contains('.') || candidates.Count > 0) return;
+
+        var maxAllowed = name.Length > 5 ? 2 : 1;
+        var allSymbols = compilation.GetSymbolsWithName(_ => true, SymbolFilter.All, ct);
+
+        foreach (var symbol in allSymbols)
+        {
+            if (kind is not null && !MatchesKind(symbol, kind)) continue;
+
+            var distance = LevenshteinDistance(name, symbol.Name);
+            if (distance > 0 && distance <= maxAllowed)
+                candidates.Add((symbol, "fuzzy", 3 + distance));
+        }
     }
 
     public static async Task<(SemanticModel? Model, SyntaxNode? Body, SyntaxNode? MethodSyntax)> ResolveMethodBodyAsync(

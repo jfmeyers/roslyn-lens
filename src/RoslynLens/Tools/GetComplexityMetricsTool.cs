@@ -107,26 +107,33 @@ public static class GetComplexityMetricsTool
             ct.ThrowIfCancellationRequested();
             if (methods.Count >= maxResults) break;
 
-            var root = await tree.GetRootAsync(ct);
-            foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
-            {
-                if (methods.Count >= maxResults) break;
-
-                var body = (SyntaxNode?)method.Body ?? method.ExpressionBody;
-                if (body is null) continue;
-
-                var metrics = ComplexityAnalyzer.Analyze(body);
-                if (metrics.Cyclomatic < threshold) continue;
-
-                var line = method.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                var containingType = method.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault()?.Identifier.Text;
-
-                methods.Add(new MethodComplexity(
-                    method.Identifier.Text, containingType, tree.FilePath, line, metrics));
-            }
+            await CollectMethodMetricsAsync(tree, threshold, maxResults, methods, ct);
         }
 
         var sorted = methods.OrderByDescending(m => m.Metrics.Cyclomatic).ToList();
         return JsonSerializer.Serialize(new ComplexityResult(sorted, sorted.Count));
+    }
+
+    private static async Task CollectMethodMetricsAsync(
+        SyntaxTree tree, int threshold, int maxResults,
+        List<MethodComplexity> methods, CancellationToken ct)
+    {
+        var root = await tree.GetRootAsync(ct);
+        foreach (var method in root.DescendantNodes().OfType<MethodDeclarationSyntax>())
+        {
+            if (methods.Count >= maxResults) break;
+
+            var body = (SyntaxNode?)method.Body ?? method.ExpressionBody;
+            if (body is null) continue;
+
+            var metrics = ComplexityAnalyzer.Analyze(body);
+            if (metrics.Cyclomatic < threshold) continue;
+
+            var line = method.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            var containingType = method.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault()?.Identifier.Text;
+
+            methods.Add(new MethodComplexity(
+                method.Identifier.Text, containingType, tree.FilePath, line, metrics));
+        }
     }
 }

@@ -37,31 +37,7 @@ public static class GetSymbolDetailBatchTool
                     continue;
                 }
 
-                var symbol = candidates[0];
-                var location = SymbolResolver.GetLocation(symbol);
-
-                var parameters = symbol is IMethodSymbol method
-                    ? method.Parameters.Select(p => new ParameterDetail(
-                        p.Name, p.Type.ToDisplayString(),
-                        p.HasExplicitDefaultValue,
-                        p.HasExplicitDefaultValue ? p.ExplicitDefaultValue?.ToString() : null)).ToList()
-                    : null;
-
-                var returnType = symbol switch
-                {
-                    IMethodSymbol m => m.ReturnType.ToDisplayString(),
-                    IPropertySymbol p => p.Type.ToDisplayString(),
-                    IFieldSymbol f => f.Type.ToDisplayString(),
-                    _ => null
-                };
-
-                var xmlDoc = symbol.GetDocumentationCommentXml(cancellationToken: ct);
-                if (string.IsNullOrWhiteSpace(xmlDoc)) xmlDoc = null;
-
-                var detail = new SymbolDetail(
-                    symbol.Name, symbol.Kind.ToString(), symbol.ToDisplayString(),
-                    returnType, location.FilePath, location.Line, parameters, xmlDoc);
-
+                var detail = BuildSymbolDetail(candidates[0], ct);
                 items.Add(new DetailBatchItem(symbolName, detail, null));
                 succeeded++;
             }
@@ -73,5 +49,32 @@ public static class GetSymbolDetailBatchTool
         }
 
         return JsonSerializer.Serialize(new DetailBatchResult(items, items.Count, succeeded, failed));
+    }
+
+    private static SymbolDetail BuildSymbolDetail(ISymbol symbol, CancellationToken ct)
+    {
+        var location = SymbolResolver.GetLocation(symbol);
+
+        var parameters = symbol is IMethodSymbol method
+            ? method.Parameters.Select(p => new ParameterDetail(
+                p.Name, p.Type.ToDisplayString(),
+                p.HasExplicitDefaultValue,
+                p.HasExplicitDefaultValue ? p.ExplicitDefaultValue?.ToString() : null)).ToList()
+            : null;
+
+        var returnType = symbol switch
+        {
+            IMethodSymbol m => m.ReturnType.ToDisplayString(),
+            IPropertySymbol p => p.Type.ToDisplayString(),
+            IFieldSymbol f => f.Type.ToDisplayString(),
+            _ => null
+        };
+
+        var xmlDoc = symbol.GetDocumentationCommentXml(cancellationToken: ct);
+        if (string.IsNullOrWhiteSpace(xmlDoc)) xmlDoc = null;
+
+        return new SymbolDetail(
+            symbol.Name, symbol.Kind.ToString(), symbol.ToDisplayString(),
+            returnType, location.FilePath, location.Line, parameters, xmlDoc);
     }
 }

@@ -28,6 +28,10 @@ public static class FindDeadCodeTool
         "CreateHostBuilder", "CreateWebHostBuilder"
     ];
 
+    private sealed record AnalysisContext(
+        Solution Solution, string Kind, int MaxResults,
+        bool IncludePublicMembers, bool IncludeEntryPoints, string[]? FileFilters);
+
     [McpServerTool(Name = "find_dead_code")]
     [Description("Finds potentially unreferenced types, methods, and properties that may be dead code.")]
     public static async Task<string> ExecuteAsync(
@@ -53,27 +57,24 @@ public static class FindDeadCodeTool
         if (projects.Count == 0)
             return JsonSerializer.Serialize(new { error = $"No projects found for scope '{scope}' with path '{path}'" });
 
-        // Apply project name filter
         if (projectFilter is not null)
         {
             var names = projectFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             projects = projects.Where(p => names.Any(n => p.Name.Equals(n, StringComparison.OrdinalIgnoreCase))).ToList();
         }
 
-        var fileFilters = fileFilter?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var ctx = new AnalysisContext(solution, kind, maxResults, includePublicMembers, includeEntryPoints,
+            fileFilter?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
 
         var entries = new List<DeadCodeEntry>();
 
         foreach (var project in projects)
         {
             ct.ThrowIfCancellationRequested();
-
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            await AnalyzeProjectForDeadCodeAsync(
-                compilation, solution, project, kind, maxResults,
-                includePublicMembers, includeEntryPoints, fileFilters, entries, ct);
+            await AnalyzeProjectForDeadCodeAsync(compilation, project, ctx, entries, ct);
         }
 
         var result = new DeadCodeResult(entries, entries.Count);
@@ -81,29 +82,16 @@ public static class FindDeadCodeTool
     }
 
     private static async Task AnalyzeProjectForDeadCodeAsync(
-        Compilation compilation,
-        Solution solution,
-        Project project,
-        string kind,
-        int maxResults,
-        bool includePublicMembers,
-        bool includeEntryPoints,
-        string[]? fileFilters,
-        List<DeadCodeEntry> entries,
-        CancellationToken ct)
+        Compilation compilation, Project project, AnalysisContext ctx,
+        List<DeadCodeEntry> entries, CancellationToken ct)
     {
         foreach (var tree in compilation.SyntaxTrees)
         {
             ct.ThrowIfCancellationRequested();
-            if (entries.Count >= maxResults) break;
+            if (entries.Count >= ctx.MaxResults) break;
 
-            // Apply file filter
-            if (fileFilters is { Length: > 0 })
-            {
-                var filePath = tree.FilePath?.Replace('\\', '/') ?? "";
-                if (!fileFilters.Any(f => filePath.EndsWith(f.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase)))
-                    continue;
-            }
+            if (!MatchesFileFilter(tree.FilePath, ctx.FileFilters))
+                continue;
 
             var model = compilation.GetSemanticModel(tree);
             var root = await tree.GetRootAsync(ct);
@@ -115,32 +103,30 @@ public static class FindDeadCodeTool
 
             foreach (var decl in declarations)
             {
-                if (entries.Count >= maxResults) break;
-
-                await CheckDeclarationAsync(decl, model, solution, project, kind,
-                    includePublicMembers, includeEntryPoints, entries, ct);
+                if (entries.Count >= ctx.MaxResults) break;
+                await CheckDeclarationAsync(decl, model, project, ctx, entries, ct);
             }
         }
     }
 
+    private static bool MatchesFileFilter(string? treePath, string[]? fileFilters)
+    {
+        if (fileFilters is not { Length: > 0 }) return true;
+        var filePath = treePath?.Replace('\\', '/') ?? "";
+        return fileFilters.Any(f => filePath.EndsWith(f.Replace('\\', '/'), StringComparison.OrdinalIgnoreCase));
+    }
+
     private static async Task CheckDeclarationAsync(
-        SyntaxNode decl,
-        SemanticModel model,
-        Solution solution,
-        Project project,
-        string kind,
-        bool includePublicMembers,
-        bool includeEntryPoints,
-        List<DeadCodeEntry> entries,
-        CancellationToken ct)
+        SyntaxNode decl, SemanticModel model, Project project,
+        AnalysisContext ctx, List<DeadCodeEntry> entries, CancellationToken ct)
     {
         var symbol = model.GetDeclaredSymbol(decl, ct);
         if (symbol is null) return;
 
-        if (!MatchesKindFilter(symbol, kind)) return;
-        if (ShouldSkip(symbol, includePublicMembers, includeEntryPoints)) return;
+        if (!MatchesKindFilter(symbol, ctx.Kind)) return;
+        if (ShouldSkip(symbol, ctx.IncludePublicMembers, ctx.IncludeEntryPoints)) return;
 
-        var references = await SymbolFinder.FindReferencesAsync(symbol, solution, ct);
+        var references = await SymbolFinder.FindReferencesAsync(symbol, ctx.Solution, ct);
         var refCount = references.Sum(r => r.Locations.Count());
 
         if (refCount == 0)

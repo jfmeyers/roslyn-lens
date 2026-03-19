@@ -67,21 +67,9 @@ public static class ComplexityAnalyzer
                 case ForStatementSyntax:
                 case ForEachStatementSyntax:
                 case DoStatementSyntax:
-                    total += 1 + nesting;
-                    total += CalculateCognitiveRecursive(child, nesting + 1);
-                    break;
-
                 case SwitchStatementSyntax:
                 case SwitchExpressionSyntax:
-                    total += 1 + nesting;
-                    total += CalculateCognitiveRecursive(child, nesting + 1);
-                    break;
-
                 case CatchClauseSyntax:
-                    total += 1 + nesting;
-                    total += CalculateCognitiveRecursive(child, nesting + 1);
-                    break;
-
                 case ConditionalExpressionSyntax:
                     total += 1 + nesting;
                     total += CalculateCognitiveRecursive(child, nesting + 1);

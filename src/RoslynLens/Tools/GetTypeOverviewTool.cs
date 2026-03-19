@@ -24,35 +24,51 @@ public static class GetTypeOverviewTool
         if (symbol is not INamedTypeSymbol typeSymbol)
             return JsonSerializer.Serialize(new { error = $"Type '{typeName}' not found" });
 
-        // Public API
+        var api = BuildPublicApi(typeSymbol);
+        var solution = workspace.GetSolution()!;
+        var hierarchy = await BuildHierarchyAsync(typeSymbol, solution, ct);
+        var implementations = await BuildImplementationsAsync(typeSymbol, solution, ct);
+        var diagnostics = await BuildDiagnosticsAsync(typeSymbol, workspace, solution, ct);
+
+        var result = new TypeOverview(api, hierarchy, implementations, diagnostics);
+        return JsonSerializer.Serialize(result);
+    }
+
+    private static PublicApiResult BuildPublicApi(INamedTypeSymbol typeSymbol)
+    {
         var members = typeSymbol.GetMembers()
             .Where(m => m.DeclaredAccessibility == Accessibility.Public)
             .Where(m => !m.IsImplicitlyDeclared)
             .Where(m => m is not IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
-            .Select(m =>
-            {
-                var kind = m switch
-                {
-                    IMethodSymbol { MethodKind: MethodKind.Constructor } => "constructor",
-                    IMethodSymbol => "method",
-                    IPropertySymbol => "property",
-                    IFieldSymbol => "field",
-                    IEventSymbol => "event",
-                    INamedTypeSymbol => "type",
-                    _ => m.Kind.ToString().ToLowerInvariant()
-                };
-                var returnType = m switch
-                {
-                    IMethodSymbol ms => ms.ReturnType.ToDisplayString(),
-                    IPropertySymbol ps => ps.Type.ToDisplayString(),
-                    IFieldSymbol fs => fs.Type.ToDisplayString(),
-                    _ => null
-                };
-                return new ApiMember(m.Name, kind, m.ToDisplayString(), returnType);
-            }).ToList();
-        var api = new PublicApiResult(typeSymbol.ToDisplayString(), members, members.Count);
+            .Select(ToApiMember).ToList();
+        return new PublicApiResult(typeSymbol.ToDisplayString(), members, members.Count);
+    }
 
-        // Hierarchy
+    private static ApiMember ToApiMember(ISymbol m)
+    {
+        var kind = m switch
+        {
+            IMethodSymbol { MethodKind: MethodKind.Constructor } => "constructor",
+            IMethodSymbol => "method",
+            IPropertySymbol => "property",
+            IFieldSymbol => "field",
+            IEventSymbol => "event",
+            INamedTypeSymbol => "type",
+            _ => m.Kind.ToString().ToLowerInvariant()
+        };
+        var returnType = m switch
+        {
+            IMethodSymbol ms => ms.ReturnType.ToDisplayString(),
+            IPropertySymbol ps => ps.Type.ToDisplayString(),
+            IFieldSymbol fs => fs.Type.ToDisplayString(),
+            _ => null
+        };
+        return new ApiMember(m.Name, kind, m.ToDisplayString(), returnType);
+    }
+
+    private static async Task<TypeHierarchyResult> BuildHierarchyAsync(
+        INamedTypeSymbol typeSymbol, Solution solution, CancellationToken ct)
+    {
         var (file, line) = SymbolResolver.GetLocation(typeSymbol);
         var typeNode = new TypeHierarchyNode(
             typeSymbol.ToDisplayString(),
@@ -75,7 +91,6 @@ public static class GetTypeOverviewTool
             return new TypeHierarchyNode(i.ToDisplayString(), "interface", iF, iL);
         }).ToList();
 
-        var solution = workspace.GetSolution()!;
         var derivedSymbols = await SymbolFinder.FindDerivedClassesAsync(typeSymbol, solution, cancellationToken: ct);
         var derivedTypes = derivedSymbols.Select(d =>
         {
@@ -84,53 +99,48 @@ public static class GetTypeOverviewTool
                 d.TypeKind.ToString().ToLowerInvariant(), dF, dL);
         }).ToList();
 
-        var hierarchy = new TypeHierarchyResult(typeNode, baseTypes, interfaces, derivedTypes);
+        return new TypeHierarchyResult(typeNode, baseTypes, interfaces, derivedTypes);
+    }
 
-        // Implementations (for interfaces)
-        ImplementationsResult? implementations = null;
-        if (typeSymbol.TypeKind == TypeKind.Interface)
+    private static async Task<ImplementationsResult?> BuildImplementationsAsync(
+        INamedTypeSymbol typeSymbol, Solution solution, CancellationToken ct)
+    {
+        if (typeSymbol.TypeKind != TypeKind.Interface) return null;
+
+        var impls = await SymbolFinder.FindImplementationsAsync(typeSymbol, solution, cancellationToken: ct);
+        var implList = impls.Select(i =>
         {
-            var impls = await SymbolFinder.FindImplementationsAsync(typeSymbol, solution, cancellationToken: ct);
-            var implList = impls.Select(i =>
-            {
-                var (iFile, iLine) = SymbolResolver.GetLocation(i);
-                return new ImplementationMatch(
-                    i.ToDisplayString(),
-                    i.TypeKind.ToString().ToLowerInvariant(),
-                    iFile, iLine, i.ContainingAssembly?.Name);
-            }).ToList();
-            implementations = new ImplementationsResult(typeSymbol.ToDisplayString(), implList, implList.Count);
-        }
+            var (iFile, iLine) = SymbolResolver.GetLocation(i);
+            return new ImplementationMatch(
+                i.ToDisplayString(),
+                i.TypeKind.ToString().ToLowerInvariant(),
+                iFile, iLine, i.ContainingAssembly?.Name);
+        }).ToList();
+        return new ImplementationsResult(typeSymbol.ToDisplayString(), implList, implList.Count);
+    }
 
-        // Diagnostics for the file
-        DiagnosticsResult? diagnostics = null;
+    private static async Task<DiagnosticsResult?> BuildDiagnosticsAsync(
+        INamedTypeSymbol typeSymbol, WorkspaceManager workspace, Solution solution, CancellationToken ct)
+    {
         var syntaxRef = typeSymbol.DeclaringSyntaxReferences.FirstOrDefault();
-        if (syntaxRef is not null)
-        {
-            var project = solution.Projects
-                .FirstOrDefault(p => p.Documents.Any(d => d.FilePath == syntaxRef.SyntaxTree.FilePath));
-            if (project is not null)
-            {
-                var compilation = await workspace.GetCompilationAsync(project, ct);
-                if (compilation is not null)
-                {
-                    var diags = compilation.GetDiagnostics(ct)
-                        .Where(d => d.Location.SourceTree?.FilePath == syntaxRef.SyntaxTree.FilePath)
-                        .Where(d => d.Severity >= DiagnosticSeverity.Warning)
-                        .Select(d => new DiagnosticInfo(
-                            d.Id,
-                            d.Severity.ToString(),
-                            d.GetMessage(),
-                            d.Location.SourceTree?.FilePath,
-                            d.Location.GetLineSpan().StartLinePosition.Line + 1))
-                        .Take(50)
-                        .ToList();
-                    diagnostics = new DiagnosticsResult(diags, diags.Count, "file");
-                }
-            }
-        }
+        if (syntaxRef is null) return null;
 
-        var result = new TypeOverview(api, hierarchy, implementations, diagnostics);
-        return JsonSerializer.Serialize(result);
+        var project = solution.Projects
+            .FirstOrDefault(p => p.Documents.Any(d => d.FilePath == syntaxRef.SyntaxTree.FilePath));
+        if (project is null) return null;
+
+        var compilation = await workspace.GetCompilationAsync(project, ct);
+        if (compilation is null) return null;
+
+        var diags = compilation.GetDiagnostics(ct)
+            .Where(d => d.Location.SourceTree?.FilePath == syntaxRef.SyntaxTree.FilePath)
+            .Where(d => d.Severity >= DiagnosticSeverity.Warning)
+            .Select(d => new DiagnosticInfo(
+                d.Id, d.Severity.ToString(), d.GetMessage(),
+                d.Location.SourceTree?.FilePath,
+                d.Location.GetLineSpan().StartLinePosition.Line + 1))
+            .Take(50)
+            .ToList();
+        return new DiagnosticsResult(diags, diags.Count, "file");
     }
 }

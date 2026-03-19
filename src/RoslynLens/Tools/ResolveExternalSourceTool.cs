@@ -30,7 +30,7 @@ public static class ResolveExternalSourceTool
                 s.ContainingAssembly?.Name.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) == true);
         }
 
-        symbol ??= candidates.FirstOrDefault();
+        symbol ??= candidates.Count > 0 ? candidates[0] : null;
 
         if (symbol is null)
             return JsonSerializer.Serialize(new { error = $"Symbol '{symbolName}' not found" });
