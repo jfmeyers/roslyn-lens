@@ -5,7 +5,7 @@
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
           <Format>opencover</Format>
-          <Include>[JFM.RoslynNavigator]*</Include>
+          <Include>[RoslynLens]*</Include>
           <Exclude>[*.Tests]*</Exclude>
           <ExcludeByAttribute>
             Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute
