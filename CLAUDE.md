@@ -63,8 +63,8 @@ dotnet tool install --global --add-source ./nupkgs RoslynLens
 # 1. Update <Version> in RoslynLens.csproj
 # 2. Commit and push
 # 3. Tag and push — triggers CI + NuGet publish + GitHub Release
-git tag v0.2.0
-git push origin v0.2.0
+git tag v1.2.0
+git push origin v1.2.0
 ```
 
 Requires `NUGET_API_KEY` secret in GitHub repo settings.
