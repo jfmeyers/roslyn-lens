@@ -95,7 +95,7 @@ public class SolutionDiscoveryTests : IDisposable
     [Fact]
     public void BfsDiscovery_Finds_Sln_In_Subdirectory()
     {
-        CreateSolutionFile(@"src\App.sln");
+        CreateSolutionFile(Path.Combine("src", "App.sln"));
 
         var result = SolutionDiscovery.BfsDiscovery(_tempDir);
         result.ShouldNotBeNull();
@@ -106,7 +106,7 @@ public class SolutionDiscoveryTests : IDisposable
     public void BfsDiscovery_Prefers_Shallower_Depth()
     {
         CreateSolutionFile("Root.sln");
-        CreateSolutionFile(@"src\Nested.sln");
+        CreateSolutionFile(Path.Combine("src", "Nested.sln"));
 
         var result = SolutionDiscovery.BfsDiscovery(_tempDir);
         result.ShouldNotBeNull();
@@ -116,7 +116,7 @@ public class SolutionDiscoveryTests : IDisposable
     [Fact]
     public void BfsDiscovery_Skips_Known_Directories()
     {
-        CreateSolutionFile(@"bin\Hidden.sln");
+        CreateSolutionFile(Path.Combine("bin", "Hidden.sln"));
 
         var result = SolutionDiscovery.BfsDiscovery(_tempDir);
         result.ShouldBeNull();
@@ -126,7 +126,7 @@ public class SolutionDiscoveryTests : IDisposable
     public void BfsDiscovery_Returns_Null_Beyond_MaxBfsDepth()
     {
         // MaxBfsDepth is 3, so depth 4 should be ignored
-        CreateSolutionFile(@"a\b\c\d\TooDeep.sln");
+        CreateSolutionFile(Path.Combine("a", "b", "c", "d", "TooDeep.sln"));
 
         var result = SolutionDiscovery.BfsDiscovery(_tempDir);
         result.ShouldBeNull();
@@ -137,7 +137,7 @@ public class SolutionDiscoveryTests : IDisposable
     {
         CreateSolutionFile("SolutionA.slnx");
         CreateSolutionFile("A-Solution.slnx");
-        CreateSolutionFile(@"src\Nested.sln");
+        CreateSolutionFile(Path.Combine("src", "Nested.sln"));
 
         var results = SolutionDiscovery.BfsDiscoverAll(_tempDir);
         results.Count.ShouldBe(3);
@@ -150,8 +150,8 @@ public class SolutionDiscoveryTests : IDisposable
     public void BfsDiscoverAll_Orders_By_Depth_Then_Alphabetically()
     {
         CreateSolutionFile("Root.sln");
-        CreateSolutionFile(@"src\Nested.sln");
-        CreateSolutionFile(@"src\Alpha.sln");
+        CreateSolutionFile(Path.Combine("src", "Nested.sln"));
+        CreateSolutionFile(Path.Combine("src", "Alpha.sln"));
 
         var results = SolutionDiscovery.BfsDiscoverAll(_tempDir);
         results.Count.ShouldBe(3);
@@ -172,10 +172,10 @@ public class SolutionDiscoveryTests : IDisposable
     public void BfsDiscoverAll_SkipsKnownDirectories()
     {
         // SolutionDiscovery has a list of ignored directories (e.g. node_modules, obj, bin, packages), so solutions in those should be skipped
-        CreateSolutionFile(@"node_modules\skip_me.sln");
-        CreateSolutionFile(@"packages\Nupkg\whatever.slnx");
-        CreateSolutionFile(@"obj\skip_me_too.slnx");
-        CreateSolutionFile(@"src\Visible.sln");
+        CreateSolutionFile(Path.Combine("node_modules", "skip_me.sln"));
+        CreateSolutionFile(Path.Combine("packages", "Nupkg", "whatever.slnx"));
+        CreateSolutionFile(Path.Combine("obj", "skip_me_too.slnx"));
+        CreateSolutionFile(Path.Combine("src", "Visible.sln"));
 
         var results = SolutionDiscovery.BfsDiscoverAll(_tempDir);
         results.Count.ShouldBe(1);
@@ -190,7 +190,7 @@ public class SolutionDiscoveryTests : IDisposable
 
         // MaxBfsDepth is 3, so depth 4 should be ignored
         CreateSolutionFile("Root.sln");
-        CreateSolutionFile(@"a\b\c\d\TooDeep.slnx");
+        CreateSolutionFile(Path.Combine("a", "b", "c", "d", "TooDeep.slnx"));
 
         var results = SolutionDiscovery.BfsDiscoverAll(_tempDir);
         results.Count.ShouldBe(1);
