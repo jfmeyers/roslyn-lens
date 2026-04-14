@@ -32,6 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when multiple solutions are present
 - Startup warning when multiple solutions are discovered
 
+Thanks to [@ericnewton76](https://github.com/ericnewton76) (Eric
+Newton) for the initial implementation (#96).
+
 ## [1.1.1] - 2026-03-26
 
 ### Fixed
