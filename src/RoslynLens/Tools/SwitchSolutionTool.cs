@@ -1,0 +1,48 @@
+using System.ComponentModel;
+using ModelContextProtocol.Server;
+
+namespace RoslynLens;
+
+[McpServerToolType]
+public static class SwitchSolutionTool
+{
+    [McpServerTool(Name = "switch_solution")]
+    [Description("Switch to a different solution from the discovered list. Use list_solutions to see available options.")]
+    public static async Task<string> ExecuteAsync(
+        WorkspaceManager workspace,
+        [Description("Full path to the solution file (must be one of the discovered solutions)")] string solutionPath,
+        CancellationToken ct = default)
+    {
+        var discovered = WorkspaceInitializer.DiscoveredSolutions;
+
+        if (!discovered.Any(p => string.Equals(p, solutionPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Json.Serialize(new
+            {
+                Error = $"Path not in discovered solutions list. Use list_solutions to see available options.",
+                Discovered = discovered
+            });
+        }
+
+        try
+        {
+            await workspace.ReloadSolutionAsync(solutionPath, ct);
+            WorkspaceInitializer.SolutionPath = solutionPath;
+
+            return Json.Serialize(new
+            {
+                Status = "switched",
+                Solution = Path.GetFileName(solutionPath),
+                ProjectCount = workspace.ProjectCount
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json.Serialize(new
+            {
+                Error = $"Failed to switch solution: {ex.Message}",
+                State = workspace.State.ToString()
+            });
+        }
+    }
+}

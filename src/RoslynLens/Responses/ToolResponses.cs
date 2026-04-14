@@ -151,3 +151,7 @@ public record DetailBatchResult(List<DetailBatchItem> Items, int Total, int Succ
 // validate_granit_conventions (Granit-specific)
 public record ConventionViolation(string Category, string Id, string Severity, string Message, string? File, int? Line, string? Suggestion);
 public record GranitConventionsResult(List<ConventionViolation> Violations, int Total, Dictionary<string, int> ByCategory);
+
+// list_solutions
+public record SolutionEntry(string Path, string Name, bool IsActive);
+public record ListSolutionsResult(List<SolutionEntry> Solutions, string? Hint);
