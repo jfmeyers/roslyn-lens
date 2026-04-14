@@ -30,7 +30,7 @@ public class WorkspaceManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task ReloadSolutionAsync_Resets_State_From_Ready()
+    public async Task ReloadSolutionAsync_Resets_State_After_Previous_Error()
     {
         // First load will fail — that's fine, we're testing state transitions
         try

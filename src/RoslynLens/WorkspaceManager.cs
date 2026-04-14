@@ -17,7 +17,7 @@ public sealed class WorkspaceManager : IDisposable
     private readonly ConcurrentDictionary<ProjectId, (Compilation Compilation, long AccessCount)> _compilationCache = new();
     private long _accessCounter;
 
-    private readonly TaskCompletionSource _readySignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private TaskCompletionSource _readySignal = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private MSBuildWorkspace? _workspace;
     private Solution? _solution;
@@ -75,12 +75,37 @@ public sealed class WorkspaceManager : IDisposable
 
     public async Task ReloadSolutionAsync(string solutionPath, CancellationToken ct)
     {
+        var previousPath = _solutionDirectory is not null
+            ? Directory.GetFiles(_solutionDirectory, "*.sln*").FirstOrDefault()
+            : null;
+
         DisposeCurrentWorkspace();
-        await LoadSolutionAsync(solutionPath, ct);
+
+        try
+        {
+            await LoadSolutionAsync(solutionPath, ct);
+        }
+        catch when (previousPath is not null && !string.Equals(previousPath, solutionPath, StringComparison.OrdinalIgnoreCase))
+        {
+            // Reload failed — attempt to restore the previous solution
+            try
+            {
+                await LoadSolutionAsync(previousPath, ct);
+            }
+            catch
+            {
+                // Both loads failed — state is already Error from LoadSolutionAsync
+            }
+
+            throw;
+        }
     }
 
     private void DisposeCurrentWorkspace()
     {
+        State = WorkspaceState.Loading;
+        _readySignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
         _sourceWatcher?.Dispose();
         _sourceWatcher = null;
         _projectWatcher?.Dispose();

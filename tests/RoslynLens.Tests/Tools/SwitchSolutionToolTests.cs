@@ -4,6 +4,7 @@ using Shouldly;
 
 namespace RoslynLens.Tests.Tools;
 
+[Collection("StaticState")]
 public class SwitchSolutionToolTests : IDisposable
 {
     private readonly WorkspaceManager _workspace;
@@ -21,19 +22,19 @@ public class SwitchSolutionToolTests : IDisposable
 
         try
         {
-            WorkspaceInitializer.DiscoveredSolutions =
-            [
-                @"C:\repos\SolutionA.slnx",
-                @"C:\repos\SolutionB.slnx"
-            ];
+            var pathA = Path.Combine(Path.GetTempPath(), "repos", "SolutionA.slnx");
+            var pathB = Path.Combine(Path.GetTempPath(), "repos", "SolutionB.slnx");
+            var unknown = Path.Combine(Path.GetTempPath(), "repos", "Unknown.slnx");
+
+            WorkspaceInitializer.DiscoveredSolutions = [pathA, pathB];
 
             var result = await SwitchSolutionTool.ExecuteAsync(
                 _workspace,
-                @"C:\repos\Unknown.slnx",
+                unknown,
                 TestContext.Current.CancellationToken);
 
             using var doc = JsonDocument.Parse(result);
-            var error = doc.RootElement.GetProperty("Error").GetString();
+            var error = doc.RootElement.GetProperty("error").GetString();
             error.ShouldNotBeNullOrEmpty();
             error.ShouldContain("not in discovered");
         }
@@ -54,11 +55,11 @@ public class SwitchSolutionToolTests : IDisposable
 
             var result = await SwitchSolutionTool.ExecuteAsync(
                 _workspace,
-                @"C:\repos\Anything.slnx",
+                Path.Combine(Path.GetTempPath(), "repos", "Anything.slnx"),
                 TestContext.Current.CancellationToken);
 
             using var doc = JsonDocument.Parse(result);
-            var error = doc.RootElement.GetProperty("Error").GetString();
+            var error = doc.RootElement.GetProperty("error").GetString();
             error.ShouldNotBeNullOrEmpty();
         }
         finally

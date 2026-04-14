@@ -19,8 +19,8 @@ public static class SwitchSolutionTool
         {
             return Json.Serialize(new
             {
-                Error = $"Path not in discovered solutions list. Use list_solutions to see available options.",
-                Discovered = discovered
+                error = "Path not in discovered solutions list. Use list_solutions to see available options.",
+                discovered = discovered
             });
         }
 
@@ -31,17 +31,17 @@ public static class SwitchSolutionTool
 
             return Json.Serialize(new
             {
-                Status = "switched",
-                Solution = Path.GetFileName(solutionPath),
-                ProjectCount = workspace.ProjectCount
+                status = "switched",
+                solution = Path.GetFileName(solutionPath),
+                projectCount = workspace.ProjectCount
             });
         }
         catch (Exception ex)
         {
             return Json.Serialize(new
             {
-                Error = $"Failed to switch solution: {ex.Message}",
-                State = workspace.State.ToString()
+                error = $"Failed to switch solution: {ex.Message}",
+                state = workspace.State.ToString()
             });
         }
     }

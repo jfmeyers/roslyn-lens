@@ -26,11 +26,11 @@ dotnet tool install --global --add-source ./nupkgs RoslynLens
 | Path | Role |
 | ---- | ---- |
 | `Program.cs` | Host + MCP stdio transport (logs → stderr) |
-| `SolutionDiscovery.cs` | BFS `.sln`/`.slnx` auto-discovery (max 3 levels) |
-| `WorkspaceManager.cs` | MSBuildWorkspace, LRU cache (50), wait-for-ready |
-| `WorkspaceInitializer.cs` | BackgroundService for async solution loading |
+| `SolutionDiscovery.cs` | BFS `.sln`/`.slnx` auto-discovery, multi-solution |
+| `WorkspaceManager.cs` | MSBuildWorkspace, LRU cache (50), solution reload |
+| `WorkspaceInitializer.cs` | BackgroundService, discovered solutions registry |
 | `SymbolResolver.cs` | Cross-project symbol resolution with file/line disambiguation |
-| `Tools/` | 28 MCP tool implementations (one class per tool) |
+| `Tools/` | 30 MCP tool implementations (one class per tool) |
 | `Analyzers/` | 18 detectors + 2 base classes (`InvocationDetectorBase`, `ObjectCreationDetectorBase`) |
 | `Responses/` | Token-optimized DTOs (records) |
 
@@ -53,12 +53,24 @@ dotnet tool install --global --add-source ./nupkgs RoslynLens
 3. Use `CSharpSyntaxTree.ParseText(source)` in tests — no full compilation needed
 4. Use `TestContext.Current.CancellationToken` (not `CancellationToken.None`)
 
+## Multi-solution support
+
+When multiple `.sln`/`.slnx` files are discovered, RoslynLens logs
+a warning and auto-selects the shallowest/alphabetically first.
+Two MCP tools enable runtime switching:
+
+- `list_solutions` — all discovered solutions with `IsActive` flag
+- `switch_solution` — reload workspace with a different solution
+
+Discovery uses `BfsDiscoverAll()` rooted at the resolved
+solution's directory. Rollback restores previous solution on failure.
+
 ## Adding a new tool
 
 1. Create `src/.../Tools/MyTool.cs` with `[McpServerToolType]` attribute
 2. Tools are auto-discovered via `WithToolsFromAssembly()`
 3. Inject `WorkspaceManager` to access the solution/compilations
-4. Call `workspace.EnsureReadyOrStatus(ct)` — waits for ready (up to timeout), returns status JSON if not
+4. Call `workspace.EnsureReadyOrStatus(ct)` — returns status if not ready
 
 ## Release
 

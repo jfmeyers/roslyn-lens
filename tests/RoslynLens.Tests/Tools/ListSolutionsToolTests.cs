@@ -4,6 +4,7 @@ using Shouldly;
 
 namespace RoslynLens.Tests.Tools;
 
+[Collection("StaticState")]
 public class ListSolutionsToolTests : IDisposable
 {
     private readonly WorkspaceManager _workspace;
@@ -22,12 +23,11 @@ public class ListSolutionsToolTests : IDisposable
 
         try
         {
-            WorkspaceInitializer.DiscoveredSolutions =
-            [
-                @"C:\repos\SolutionA.slnx",
-                @"C:\repos\SolutionB.slnx"
-            ];
-            WorkspaceInitializer.SolutionPath = @"C:\repos\SolutionA.slnx";
+            var pathA = Path.Combine(Path.GetTempPath(), "repos", "SolutionA.slnx");
+            var pathB = Path.Combine(Path.GetTempPath(), "repos", "SolutionB.slnx");
+
+            WorkspaceInitializer.DiscoveredSolutions = [pathA, pathB];
+            WorkspaceInitializer.SolutionPath = pathA;
 
             var result = await ListSolutionsTool.ExecuteAsync(_workspace, TestContext.Current.CancellationToken);
 
@@ -78,13 +78,12 @@ public class ListSolutionsToolTests : IDisposable
 
         try
         {
-            WorkspaceInitializer.DiscoveredSolutions =
-            [
-                @"C:\repos\A.slnx",
-                @"C:\repos\B.slnx",
-                @"C:\repos\C.slnx"
-            ];
-            WorkspaceInitializer.SolutionPath = @"C:\repos\A.slnx";
+            var pathA = Path.Combine(Path.GetTempPath(), "repos", "A.slnx");
+            var pathB = Path.Combine(Path.GetTempPath(), "repos", "B.slnx");
+            var pathC = Path.Combine(Path.GetTempPath(), "repos", "C.slnx");
+
+            WorkspaceInitializer.DiscoveredSolutions = [pathA, pathB, pathC];
+            WorkspaceInitializer.SolutionPath = pathA;
 
             var result = await ListSolutionsTool.ExecuteAsync(_workspace, TestContext.Current.CancellationToken);
 
