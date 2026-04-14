@@ -32,8 +32,6 @@ public class SolutionDiscoveryTests : IDisposable
         }
     }
 
-    #endregion
-
     private string CreateSubDir(string name)
     {
         var path = Path.Combine(_tempDir, name);
@@ -64,6 +62,8 @@ public class SolutionDiscoveryTests : IDisposable
         File.WriteAllText(fullPath, content);
         return fullPath;
     }
+
+    #endregion
 
     [Fact]
     public void FindSolutionPath_With_Explicit_Arg_Returns_Path()
@@ -171,6 +171,7 @@ public class SolutionDiscoveryTests : IDisposable
     [Fact]
     public void BfsDiscoverAll_SkipsKnownDirectories()
     {
+        // SolutionDiscovery has a list of ignored directories (e.g. node_modules, obj, bin, packages), so solutions in those should be skipped
         CreateSolutionFile(@"node_modules\skip_me.sln");
         CreateSolutionFile(@"packages\Nupkg\whatever.slnx");
         CreateSolutionFile(@"obj\skip_me_too.slnx");
@@ -184,6 +185,9 @@ public class SolutionDiscoveryTests : IDisposable
     [Fact]
     public void BfsDiscoverAll_Ignores_Solutions_Beyond_MaxBfsDepth()
     {
+        // Sanity check to ensure the constant is what we expect
+        SolutionDiscovery.MaxBfsDepth.ShouldBe(3);
+
         // MaxBfsDepth is 3, so depth 4 should be ignored
         CreateSolutionFile("Root.sln");
         CreateSolutionFile(@"a\b\c\d\TooDeep.slnx");
