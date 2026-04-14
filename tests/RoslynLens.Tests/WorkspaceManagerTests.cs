@@ -61,5 +61,6 @@ public class WorkspaceManagerTests : IDisposable
     public void Dispose()
     {
         _manager.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

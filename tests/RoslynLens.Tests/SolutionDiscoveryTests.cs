@@ -25,11 +25,12 @@ public class SolutionDiscoveryTests : IDisposable
         try
         {
             Directory.Delete(_tempDir, true);
-            Console.WriteLine("[SolutionDiscoveryTests] Deleted temp directory: {0}", _tempDir);
         }
-        catch 
-        { 
+        catch
+        {
         }
+
+        GC.SuppressFinalize(this);
     }
 
     private string CreateSubDir(string name)

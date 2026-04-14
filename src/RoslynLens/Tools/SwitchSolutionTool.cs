@@ -15,7 +15,7 @@ public static class SwitchSolutionTool
     {
         var discovered = WorkspaceInitializer.DiscoveredSolutions;
 
-        if (!discovered.Any(p => string.Equals(p, solutionPath, StringComparison.OrdinalIgnoreCase)))
+        if (!discovered.Contains(solutionPath, StringComparer.OrdinalIgnoreCase))
         {
             return Json.Serialize(new
             {

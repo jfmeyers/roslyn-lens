@@ -71,5 +71,6 @@ public class SwitchSolutionToolTests : IDisposable
     public void Dispose()
     {
         _workspace.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

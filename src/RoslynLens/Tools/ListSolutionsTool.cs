@@ -22,7 +22,7 @@ public static class ListSolutionsTool
             string.Equals(path, activePath, StringComparison.OrdinalIgnoreCase)
         )).ToList();
 
-        var hint = workspace.GetMultiSolutionHint();
+        var hint = WorkspaceManager.GetMultiSolutionHint();
         var result = new ListSolutionsResult(entries, hint);
 
         return Task.FromResult(Json.Serialize(result));

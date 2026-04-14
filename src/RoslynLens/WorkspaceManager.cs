@@ -145,7 +145,7 @@ public sealed class WorkspaceManager : IDisposable
         return Json.Serialize(status);
     }
 
-    public string? GetMultiSolutionHint()
+    public static string? GetMultiSolutionHint()
     {
         var discovered = WorkspaceInitializer.DiscoveredSolutions;
         if (discovered.Count <= 1)

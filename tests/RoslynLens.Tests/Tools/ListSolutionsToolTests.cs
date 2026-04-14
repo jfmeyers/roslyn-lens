@@ -102,5 +102,6 @@ public class ListSolutionsToolTests : IDisposable
     public void Dispose()
     {
         _workspace.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
