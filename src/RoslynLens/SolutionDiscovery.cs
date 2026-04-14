@@ -75,6 +75,42 @@ public static class SolutionDiscovery
         return bestMatch;
     }
 
+    public static IReadOnlyList<string> BfsDiscoverAll(string startDirectory)
+    {
+        var queue = new Queue<(string Path, int Depth)>();
+        queue.Enqueue((startDirectory, 0));
+
+        var results = new List<(string FullPath, int Depth)>();
+
+        while (queue.Count > 0)
+        {
+            var (dirPath, depth) = queue.Dequeue();
+
+            if (depth > MaxBfsDepth)
+                continue;
+
+            try
+            {
+                foreach (var file in Directory.EnumerateFiles(dirPath).Where(IsSolutionFile))
+                {
+                    results.Add((Path.GetFullPath(file), depth));
+                }
+
+                EnqueueSubDirectories(queue, dirPath, depth);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Skip directories we can't access
+            }
+        }
+
+        return results
+            .OrderBy(r => r.Depth)
+            .ThenBy(r => r.FullPath, StringComparer.OrdinalIgnoreCase)
+            .Select(r => r.FullPath)
+            .ToList();
+    }
+
     private static string? ScanDirectoryForSolution(string dirPath, int depth, string? currentBest, ref int bestDepth)
     {
         foreach (var file in Directory.EnumerateFiles(dirPath).Where(IsSolutionFile))
