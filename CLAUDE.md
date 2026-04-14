@@ -10,7 +10,7 @@
 
 ## Stack
 
-.NET 10 | C# 14 | Roslyn 5.3 | ModelContextProtocol 1.1.0 | xUnit v3
+.NET 10 | C# 14 | Roslyn 5.3 | ModelContextProtocol 1.2.0 | xUnit v3
 
 ## Commands
 
