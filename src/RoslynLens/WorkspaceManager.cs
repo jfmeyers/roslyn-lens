@@ -58,9 +58,6 @@ public sealed class WorkspaceManager : IDisposable
 
             SetupFileWatchers();
 
-            // Release temporary MSBuild objects after solution load
-            GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
-
             State = WorkspaceState.Ready;
             _readySignal.TrySetResult();
         }

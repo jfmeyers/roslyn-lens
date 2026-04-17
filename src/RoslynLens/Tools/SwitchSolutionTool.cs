@@ -20,7 +20,7 @@ public static class SwitchSolutionTool
             return Json.Serialize(new
             {
                 error = "Path not in discovered solutions list. Use list_solutions to see available options.",
-                discovered = discovered
+                discovered
             });
         }
 
