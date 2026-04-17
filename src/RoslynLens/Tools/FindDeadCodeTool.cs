@@ -78,7 +78,9 @@ public static class FindDeadCodeTool
         }
 
         var result = new DeadCodeResult(entries, entries.Count);
-        return Json.Serialize(result);
+        return scope == "solution"
+            ? WorkspaceManager.SerializeWithMultiSolutionHint(result)
+            : Json.Serialize(result);
     }
 
     private static async Task AnalyzeProjectForDeadCodeAsync(

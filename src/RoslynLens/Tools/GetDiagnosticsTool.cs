@@ -107,7 +107,9 @@ public static class GetDiagnosticsTool
     private static string SerializeResult(List<DiagnosticInfo> diagnostics, string scope)
     {
         var result = new DiagnosticsResult(diagnostics, diagnostics.Count, scope);
-        return Json.Serialize(result);
+        return scope == "solution"
+            ? WorkspaceManager.SerializeWithMultiSolutionHint(result)
+            : Json.Serialize(result);
     }
 
     private static void CollectDiagnostics(
