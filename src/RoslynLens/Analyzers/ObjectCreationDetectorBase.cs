@@ -35,13 +35,6 @@ public abstract class ObjectCreationDetectorBase : IAntiPatternDetector
         }
     }
 
-    protected bool IsTargetType(string typeName)
-    {
-        foreach (var target in TargetTypeNames)
-        {
-            if (string.Equals(typeName, target, StringComparison.Ordinal))
-                return true;
-        }
-        return false;
-    }
+    protected bool IsTargetType(string typeName) =>
+        TargetTypeNames.Contains(typeName, StringComparer.Ordinal);
 }

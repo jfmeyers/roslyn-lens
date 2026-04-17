@@ -21,21 +21,16 @@ public abstract class InvocationDetectorBase : IAntiPatternDetector
         var root = tree.GetRoot(ct);
         var filePath = tree.FilePath;
 
-        foreach (var invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+        var matches = root.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(invocation => TargetExpressions.Contains(invocation.Expression.ToString(), StringComparer.Ordinal));
+
+        foreach (var invocation in matches)
         {
             ct.ThrowIfCancellationRequested();
-
-            var text = invocation.Expression.ToString();
-            foreach (var target in TargetExpressions)
-            {
-                if (string.Equals(text, target, StringComparison.Ordinal))
-                {
-                    var line = invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    yield return new AntiPatternViolation(
-                        Id, AntiPatternSeverity.Warning, Message, filePath, line, Suggestion);
-                    break;
-                }
-            }
+            var line = invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+            yield return new AntiPatternViolation(
+                Id, AntiPatternSeverity.Warning, Message, filePath, line, Suggestion);
         }
     }
 }
