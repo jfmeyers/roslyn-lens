@@ -35,7 +35,7 @@ public static class GetTestCoverageMapTool
             workspace, productionProjects, testClassMap, maxResults, ct);
 
         var result = new TestCoverageMapResult(entries, entries.Count, covered, uncovered);
-        return Json.Serialize(result);
+        return WorkspaceManager.SerializeWithMultiSolutionHint(result);
     }
 
     private static async Task<Dictionary<string, (string? File, string Project)>> BuildTestClassMapAsync(

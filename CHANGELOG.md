@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-04-14
+
+### Added
+
+- Multi-solution hint surfaced in `EnsureReadyOrStatus` status
+  response (visible during workspace loading)
+- Multi-solution hint surfaced in solution-scoped tool responses:
+  `get_project_graph`, `get_diagnostics` (solution scope),
+  `find_dead_code` (solution scope), `get_test_coverage_map`,
+  `validate_conventions`
+- `WorkspaceManager.SerializeWithMultiSolutionHint<T>()` helper
+  that wraps payloads as `{ result, hint }` only when multiple
+  solutions are discovered (no envelope on single-solution repos)
+
+Addresses [#102](https://github.com/jfmeyers/roslyn-lens/issues/102)
+raised by [@ericnewton76](https://github.com/ericnewton76).
+
 ## [1.2.1] - 2026-04-14
 
 ### Changed
@@ -110,6 +127,7 @@ Initial release as `JFM.RoslynNavigator`.
 - GitHub Actions CI/CD (build + release + NuGet publish)
 - Global dotnet tool distribution (`dotnet tool install --global JFM.RoslynNavigator`)
 
+[1.2.2]: https://github.com/jfmeyers/roslyn-lens/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/jfmeyers/roslyn-lens/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/jfmeyers/roslyn-lens/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/jfmeyers/roslyn-lens/compare/v1.1.0...v1.1.1

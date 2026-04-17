@@ -32,7 +32,7 @@ public static class GetProjectGraphTool
 
         var totalMatching = matchingNames is not null ? matchingNames.Count : allProjects.Count;
         var result = new ProjectGraphResult(nodes, totalMatching);
-        return Task.FromResult(Json.Serialize(result));
+        return Task.FromResult(WorkspaceManager.SerializeWithMultiSolutionHint(result));
     }
 
     private static HashSet<string>? BuildMatchSet(

@@ -78,7 +78,7 @@ public static class ValidateGranitConventionsTool
             .ToDictionary(g => g.Key, g => g.Count());
 
         var result = new GranitConventionsResult(violations, violations.Count, byCategory);
-        return Json.Serialize(result);
+        return WorkspaceManager.SerializeWithMultiSolutionHint(result);
     }
 
     private static async Task AnalyzeCompilationAsync(
