@@ -141,7 +141,13 @@ public sealed class WorkspaceManager : IDisposable
                 return null;
         }
 
-        var status = new { state = State.ToString(), message = ErrorMessage ?? "Workspace not ready", projectCount = ProjectCount };
+        var status = new
+        {
+            state = State.ToString(),
+            message = ErrorMessage ?? "Workspace not ready",
+            projectCount = ProjectCount,
+            hint = GetMultiSolutionHint()
+        };
         return Json.Serialize(status);
     }
 
@@ -152,6 +158,20 @@ public sealed class WorkspaceManager : IDisposable
             return null;
 
         return $"hint: {discovered.Count} solutions discovered. Use list_solutions to see options and switch_solution to change.";
+    }
+
+    /// <summary>
+    /// Serializes a tool response with an optional multi-solution hint envelope.
+    /// When multiple solutions are discovered, wraps the payload as { result, hint }.
+    /// Otherwise serializes the payload directly to keep responses minimal.
+    /// </summary>
+    public static string SerializeWithMultiSolutionHint<T>(T payload)
+    {
+        var hint = GetMultiSolutionHint();
+        if (hint is null)
+            return Json.Serialize(payload);
+
+        return Json.Serialize(new { result = payload, hint });
     }
 
     public Solution? GetSolution() => _solution;
