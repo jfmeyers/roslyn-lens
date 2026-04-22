@@ -1,0 +1,58 @@
+name: Feature Request
+description: Suggest a new MCP tool, detector, or enhancement
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Please describe your idea below.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Use case
+      description: What problem does this feature solve? What can a Claude Code user not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: |
+        How would you like it to work? If proposing a new MCP tool, sketch
+        the input arguments and the shape of the response.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: |
+        Any other approaches you've thought about, including using existing
+        tools like `Read` + `Grep` or combining several existing MCP tools.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of change
+      options:
+        - New MCP tool
+        - New anti-pattern detector
+        - Improvement to an existing tool/detector
+        - Performance / token efficiency
+        - Configuration / discovery
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: token-cost
+    attributes:
+      label: Expected token cost
+      description: |
+        RoslynLens aims for 30–150 tokens per query. Estimate the typical
+        response size for the proposed feature.
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'd be willing to submit a PR for this feature

@@ -1,0 +1,91 @@
+name: Bug Report
+description: Report a bug in RoslynLens
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the sections below.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Minimal steps to reproduce the behavior. If possible, include the
+        MCP tool call (name + arguments) that triggered it and a minimal
+        `.sln`/`.cs` snippet.
+      placeholder: |
+        1. Open solution '...'
+        2. Call MCP tool 'find_symbol' with arguments '...'
+        3. Observe the error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happens instead.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Stack trace
+      description: |
+        Paste any relevant logs from `stderr` or stack traces. Set
+        `ROSLYN_LENS_LOG_LEVEL=Debug` for more verbose output.
+      render: text
+  - type: input
+    id: tool-or-detector
+    attributes:
+      label: Affected MCP tool or detector
+      description: "e.g. `find_references`, `detect_antipatterns` (AP005), `get_project_graph`"
+  - type: input
+    id: roslyn-lens-version
+    attributes:
+      label: RoslynLens version
+      description: "Output of `roslyn-lens --version` or the version installed via `dotnet tool list -g`"
+    validations:
+      required: true
+  - type: input
+    id: dotnet-version
+    attributes:
+      label: .NET SDK version
+      description: "Output of `dotnet --version`"
+    validations:
+      required: true
+  - type: input
+    id: mcp-host
+    attributes:
+      label: MCP host
+      description: "e.g. Claude Code 1.x, custom client, standalone (no host)"
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      description: "e.g. Ubuntu 24.04, Windows 11, macOS 15"
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - Critical (tool unusable, no workaround)
+        - Major (feature broken, difficult workaround)
+        - Minor (annoying but workable)
+        - Cosmetic (typo, formatting)
+    validations:
+      required: true
