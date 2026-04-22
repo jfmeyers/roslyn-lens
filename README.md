@@ -83,8 +83,13 @@ large .NET solutions.
 
 ## Requirements
 
-- .NET 10 SDK or later
+- .NET 10 SDK or later (to run the tool itself)
 - A .NET solution (`.sln` or `.slnx`)
+
+RoslynLens runs on .NET 10, but analyzes any C# project regardless of its
+target framework (.NET Framework 4.x, .NET Core, .NET 5–10). If your
+solution's `global.json` pins a specific SDK, that SDK must also be
+installed so MSBuild can restore and load it.
 
 ## Installation
 
