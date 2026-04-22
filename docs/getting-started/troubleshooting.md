@@ -9,13 +9,17 @@
 
 ### Causes and fixes
 
-**Missing .NET SDK**: RoslynLens requires the same SDK as your solution.
+**Missing .NET SDK**: RoslynLens itself runs on .NET 10, but MSBuild needs
+the SDK declared in your solution's `global.json` to restore and load it.
+List installed SDKs:
 
 ```bash
 dotnet --list-sdks
 ```
 
-Ensure the SDK version matches your `global.json` or `<TargetFramework>`.
+Install any additional SDK your solution requires (the analyzed projects'
+`<TargetFramework>` does not need to match — only the SDK pinned by
+`global.json` must be present).
 
 **MSBuild restore needed**: The solution must be restorable.
 
