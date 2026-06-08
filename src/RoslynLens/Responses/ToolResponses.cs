@@ -155,3 +155,20 @@ public record GranitConventionsResult(List<ConventionViolation> Violations, int 
 // list_solutions
 public record SolutionEntry(string Path, string Name, bool IsActive);
 public record ListSolutionsResult(List<SolutionEntry> Solutions, string? Hint);
+
+// get_communities
+public record CommunityMember(string Namespace, int Degree);
+public record CommunityEntry(string Id, List<CommunityMember> Members, float Cohesion, string? CommonPrefix);
+public record CommunitiesResult(List<CommunityEntry> Communities, int TotalNamespaces, int TotalCommunities);
+
+// find_god_nodes
+public record GodNodeEntry(string Name, string Kind, int IncomingRefs, string? File, int? Line, string? Project);
+public record GodNodesResult(List<GodNodeEntry> Nodes, int Total, double MeanRefs, double StdDevRefs, double Threshold);
+
+// find_surprising_dependencies
+public record SurprisingDependency(string From, string To, int Score, List<string> Reasons, int RefCount);
+public record SurprisingDependenciesResult(List<SurprisingDependency> Dependencies, int Total);
+
+// find_isolated_symbols
+public record IsolatedSymbolEntry(string Name, string Kind, string? File, int? Line, string? Project);
+public record IsolatedSymbolsResult(List<IsolatedSymbolEntry> Symbols, int Total);

@@ -1,7 +1,7 @@
 # RoslynLens Documentation
 
 A token-efficient MCP server for .NET codebase navigation via Roslyn.
-30 tools, 19 anti-pattern detectors, configurable and extensible.
+34 tools, 18 anti-pattern detectors, configurable and extensible.
 
 ## Getting Started
 
@@ -13,7 +13,7 @@ A token-efficient MCP server for .NET codebase navigation via Roslyn.
   environment variables, CLI args, tuning guide
 - [Troubleshooting](getting-started/troubleshooting.md) — common issues and fixes
 
-## Tools Reference (30 tools)
+## Tools Reference (34 tools)
 
 ### Core tools (17)
 
@@ -44,12 +44,17 @@ A token-efficient MCP server for .NET codebase navigation via Roslyn.
 - [Solution Management Tools](tools/solution.md) —
   list_solutions, switch_solution
 
-## Anti-Pattern Detectors (19)
+### v1.3.0 tools (4)
+
+- [Graph Intelligence Tools](tools/graph.md) — get_communities,
+  find_god_nodes, find_surprising_dependencies, find_isolated_symbols
+
+## Anti-Pattern Detectors (18)
 
 - [General .NET Detectors](detectors/general.md) — AP001-AP009 (async, error
   handling, resource management, observability)
 - [Domain-Specific Detectors](detectors/domain.md) — GR-GUID, GR-SECRET,
-  GR-DTO, and 7 more
+  GR-DTO, and 6 more
 
 ## Architecture
 
