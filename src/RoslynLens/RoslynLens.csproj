@@ -34,6 +34,12 @@
     <None Include="../../icon.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>RoslynLens.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
   <!-- Exclude satellite assemblies (Roslyn localization) and legacy BuildHost -->
   <Target Name="RemoveUnneededContent" AfterTargets="Publish">
     <!-- Roslyn diagnostic messages in 13 locales — not needed for an MCP server -->

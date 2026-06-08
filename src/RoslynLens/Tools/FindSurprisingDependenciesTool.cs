@@ -102,7 +102,7 @@ public static class FindSurprisingDependenciesTool
             if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
 
             var fromNs = type.ContainingNamespace?.ToDisplayString();
-            if (string.IsNullOrEmpty(fromNs) || IsSystemNamespace(fromNs)) continue;
+            if (string.IsNullOrEmpty(fromNs) || TypeStructureHelper.IsSystemNamespace(fromNs)) continue;
 
             nsToProject.TryAdd(fromNs, projectName);
             CollectOutgoingEdges(type, fromNs, projectName, edges, nsToProject, ct);
@@ -120,7 +120,7 @@ public static class FindSurprisingDependenciesTool
         foreach (var targetType in TypeStructureHelper.CollectStructuralTypeRefs(type, ct))
         {
             var toNs = targetType.ContainingNamespace?.ToDisplayString();
-            if (string.IsNullOrEmpty(toNs) || IsSystemNamespace(toNs) || toNs == fromNs) continue;
+            if (string.IsNullOrEmpty(toNs) || TypeStructureHelper.IsSystemNamespace(toNs) || toNs == fromNs) continue;
 
             var toProject = targetType.ContainingAssembly?.Name ?? toNs;
             nsToProject.TryAdd(toNs, toProject);
@@ -163,7 +163,7 @@ public static class FindSurprisingDependenciesTool
 
         foreach (var (key, data) in edges)
         {
-            var (score, reasons) = ComputeSurpriseScore(key, data, outDegree, inDegree, nsToProject, hubThreshold, medianOutDegree);
+            var (score, reasons) = ComputeSurpriseScore(key, outDegree, inDegree, nsToProject, hubThreshold, medianOutDegree);
             if (score > 0)
                 scored.Add((score, reasons, key.From, key.To, data.RefCount));
         }
@@ -180,7 +180,6 @@ public static class FindSurprisingDependenciesTool
 
     private static (int Score, List<string> Reasons) ComputeSurpriseScore(
         (string From, string To) key,
-        EdgeData data,
         Dictionary<string, int> outDegree,
         Dictionary<string, int> inDegree,
         Dictionary<string, string> nsToProject,
@@ -241,7 +240,4 @@ public static class FindSurprisingDependenciesTool
         return (partsA.Length - commonLen) + (partsB.Length - commonLen);
     }
 
-    private static bool IsSystemNamespace(string ns) =>
-        ns.StartsWith("System", StringComparison.Ordinal) ||
-        ns.StartsWith("Microsoft", StringComparison.Ordinal);
 }

@@ -20,20 +20,30 @@ internal static class TypeStructureHelper
         foreach (var member in type.GetMembers())
         {
             ct.ThrowIfCancellationRequested();
-            switch (member)
-            {
-                case IFieldSymbol f:
-                    if (f.Type is INamedTypeSymbol fn) yield return fn;
-                    break;
-                case IPropertySymbol p:
-                    if (p.Type is INamedTypeSymbol pn) yield return pn;
-                    break;
-                case IMethodSymbol m:
-                    if (m.ReturnType is INamedTypeSymbol rn) yield return rn;
-                    foreach (var param in m.Parameters)
-                        if (param.Type is INamedTypeSymbol paramN) yield return paramN;
-                    break;
-            }
+            foreach (var t in GetMemberTypes(member))
+                yield return t;
+        }
+    }
+
+    internal static bool IsSystemNamespace(string ns) =>
+        ns.StartsWith("System", StringComparison.Ordinal) ||
+        ns.StartsWith("Microsoft", StringComparison.Ordinal);
+
+    private static IEnumerable<INamedTypeSymbol> GetMemberTypes(ISymbol member)
+    {
+        switch (member)
+        {
+            case IFieldSymbol f:
+                if (f.Type is INamedTypeSymbol fn) yield return fn;
+                break;
+            case IPropertySymbol p:
+                if (p.Type is INamedTypeSymbol pn) yield return pn;
+                break;
+            case IMethodSymbol m:
+                if (m.ReturnType is INamedTypeSymbol rn) yield return rn;
+                foreach (var param in m.Parameters)
+                    if (param.Type is INamedTypeSymbol paramN) yield return paramN;
+                break;
         }
     }
 }

@@ -37,6 +37,7 @@ public static class FindIsolatedSymbolsTool
             .ToList();
 
         var solutionTypeNames = await CollectSolutionTypeNamesAsync(workspace, projects, ct);
+        var ctx = new ScanContext(solution, solutionTypeNames, includePublicTypes, maxResults);
         var isolated = new List<IsolatedSymbolEntry>();
 
         foreach (var project in projects)
@@ -47,7 +48,7 @@ public static class FindIsolatedSymbolsTool
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            await AnalyzeProjectAsync(compilation, project, solution, solutionTypeNames, includePublicTypes, maxResults, isolated, ct);
+            await AnalyzeProjectAsync(compilation, project, ctx, isolated, ct);
         }
 
         var result = new IsolatedSymbolsResult(isolated, isolated.Count);
@@ -56,25 +57,28 @@ public static class FindIsolatedSymbolsTool
             : Json.Serialize(result);
     }
 
+    private sealed record ScanContext(
+        Solution Solution,
+        HashSet<string> SolutionTypeNames,
+        bool IncludePublicTypes,
+        int MaxResults);
+
     private static async Task AnalyzeProjectAsync(
         Compilation compilation,
         Project project,
-        Solution solution,
-        HashSet<string> solutionTypeNames,
-        bool includePublicTypes,
-        int maxResults,
+        ScanContext ctx,
         List<IsolatedSymbolEntry> isolated,
         CancellationToken ct)
     {
         foreach (var tree in compilation.SyntaxTrees)
         {
             ct.ThrowIfCancellationRequested();
-            if (isolated.Count >= maxResults) break;
+            if (isolated.Count >= ctx.MaxResults) break;
 
             var model = compilation.GetSemanticModel(tree);
             var root = await tree.GetRootAsync(ct);
 
-            await AnalyzeTreeAsync(root, model, project, solution, solutionTypeNames, includePublicTypes, maxResults, isolated, ct);
+            await AnalyzeTreeAsync(root, model, project, ctx, isolated, ct);
         }
     }
 
@@ -82,23 +86,20 @@ public static class FindIsolatedSymbolsTool
         SyntaxNode root,
         SemanticModel model,
         Project project,
-        Solution solution,
-        HashSet<string> solutionTypeNames,
-        bool includePublicTypes,
-        int maxResults,
+        ScanContext ctx,
         List<IsolatedSymbolEntry> isolated,
         CancellationToken ct)
     {
         foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
         {
-            if (isolated.Count >= maxResults) break;
+            if (isolated.Count >= ctx.MaxResults) break;
             ct.ThrowIfCancellationRequested();
 
             if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
-            if (IsSystemType(type) || ShouldSkip(type, includePublicTypes)) continue;
-            if (HasSolutionTypeReferences(type, solutionTypeNames)) continue;
+            if (IsSystemType(type) || ShouldSkip(type, ctx.IncludePublicTypes)) continue;
+            if (HasSolutionTypeReferences(type, ctx.SolutionTypeNames)) continue;
 
-            var refs = await SymbolFinder.FindReferencesAsync(type, solution, ct);
+            var refs = await SymbolFinder.FindReferencesAsync(type, ctx.Solution, ct);
             if (refs.Sum(r => r.Locations.Count()) > 0) continue;
 
             var loc = SymbolResolver.GetLocation(type);
@@ -154,8 +155,6 @@ public static class FindIsolatedSymbolsTool
     private static bool IsSystemType(INamedTypeSymbol type)
     {
         var ns = type.ContainingNamespace?.ToDisplayString();
-        return ns is not null &&
-               (ns.StartsWith("System", StringComparison.Ordinal) ||
-                ns.StartsWith("Microsoft", StringComparison.Ordinal));
+        return ns is not null && TypeStructureHelper.IsSystemNamespace(ns);
     }
 }

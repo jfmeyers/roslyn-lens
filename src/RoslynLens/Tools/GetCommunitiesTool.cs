@@ -84,14 +84,14 @@ public static class GetCommunitiesTool
         if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) return;
 
         var sourceNs = type.ContainingNamespace?.ToDisplayString();
-        if (string.IsNullOrEmpty(sourceNs) || IsSystemNamespace(sourceNs)) return;
+        if (string.IsNullOrEmpty(sourceNs) || TypeStructureHelper.IsSystemNamespace(sourceNs)) return;
 
         nsEdges.TryAdd(sourceNs, new Dictionary<string, int>(StringComparer.Ordinal));
 
         foreach (var targetType in TypeStructureHelper.CollectStructuralTypeRefs(type, ct))
         {
             var targetNs = targetType.ContainingNamespace?.ToDisplayString();
-            if (string.IsNullOrEmpty(targetNs) || IsSystemNamespace(targetNs) || targetNs == sourceNs)
+            if (string.IsNullOrEmpty(targetNs) || TypeStructureHelper.IsSystemNamespace(targetNs) || targetNs == sourceNs)
                 continue;
 
             AddEdge(nsEdges, sourceNs, targetNs);
@@ -228,7 +228,4 @@ public static class GetCommunitiesTool
         return prefix.Count > 0 ? string.Join(".", prefix) : null;
     }
 
-    private static bool IsSystemNamespace(string ns) =>
-        ns.StartsWith("System", StringComparison.Ordinal) ||
-        ns.StartsWith("Microsoft", StringComparison.Ordinal);
 }
