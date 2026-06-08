@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-06-08
+
+### Added
+
+- `get_communities` — partitions solution namespaces into cohesive communities
+  using label-propagation over the type-reference graph; returns per-community
+  cohesion score (0–1) and common namespace prefix
+- `find_god_nodes` — identifies types or methods whose incoming reference count
+  exceeds mean + N×stddev across the solution; exposes coupling hotspots most
+  likely to benefit from decomposition
+- `find_surprising_dependencies` — scores cross-namespace edges on multiple
+  surprise factors (cross-assembly, peripheral-source, hub-target, semantic
+  distance) and returns the least-expected couplings in the codebase
+- `find_isolated_symbols` — finds types with degree 0 in the full solution
+  graph (no incoming references and no structural outgoing references to other
+  solution types); distinct from `find_dead_code` which only checks incoming
+  references
+
+### Changed
+
+- ModelContextProtocol 1.2.0 → 1.4.0
+- Microsoft.Extensions.Hosting 10.0.6 → 10.0.8
+- Microsoft.Build.Framework 18.4.0 → 18.6.3
+- Microsoft.NET.StringTools 18.6.3 added (new transitive dep of `Microsoft.Build.Framework`,
+  pinned with `ExcludeAssets="runtime"` to satisfy `Microsoft.Build.Locator`)
+- ICSharpCode.Decompiler 10.0.0.8330 → 10.1.0.8386
+- coverlet.collector 8.0.1 → 10.0.1 (test)
+- Microsoft.NET.Test.Sdk 18.3.0 → 18.6.0 (test)
+
 ## [1.2.2] - 2026-04-14
 
 ### Added
@@ -127,6 +156,7 @@ Initial release as `JFM.RoslynNavigator`.
 - GitHub Actions CI/CD (build + release + NuGet publish)
 - Global dotnet tool distribution (`dotnet tool install --global JFM.RoslynNavigator`)
 
+[1.3.0]: https://github.com/jfmeyers/roslyn-lens/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/jfmeyers/roslyn-lens/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/jfmeyers/roslyn-lens/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/jfmeyers/roslyn-lens/compare/v1.1.1...v1.2.0

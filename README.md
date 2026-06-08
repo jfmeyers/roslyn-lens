@@ -16,7 +16,7 @@ large .NET solutions.
 
 ## Features
 
-### 30 Navigation & Analysis Tools
+### 34 Navigation & Analysis Tools
 
 | Tool | Purpose |
 | ---- | ------- |
@@ -26,6 +26,10 @@ large .NET solutions.
 | `find_callers` | Find direct callers of a method |
 | `find_overrides` | Find overrides of virtual/abstract methods |
 | `find_dead_code` | Detect unused types, methods, and properties (with filters) |
+| `find_isolated_symbols` | Detect degree-0 types: no incoming refs and no solution-type deps |
+| `find_god_nodes` | Identify types/methods with disproportionately high in-degree |
+| `find_surprising_dependencies` | Rank unexpected cross-namespace edges by surprise score |
+| `get_communities` | Partition namespaces into cohesive communities (label propagation) |
 | `get_type_hierarchy` | Show inheritance chain, interfaces, and derived types |
 | `get_public_api` | Get public surface without reading the full file |
 | `get_symbol_detail` | Full signature, parameters, return type, and XML docs |
@@ -188,7 +192,7 @@ src/RoslynLens/
 ├── ComplexityAnalyzer.cs       # Cyclomatic/cognitive complexity metrics
 ├── DuplicateCodeDetector.cs    # AST fingerprinting for duplicate detection
 ├── ExternalSourceResolver.cs   # SourceLink + decompilation for NuGet deps
-├── Tools/                      # 30 MCP tool implementations
+├── Tools/                      # 34 MCP tool implementations
 ├── Analyzers/                  # 18 anti-pattern detectors
 └── Responses/                  # Token-optimized DTOs
 ```
