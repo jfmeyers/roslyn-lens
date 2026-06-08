@@ -72,15 +72,9 @@ public static class FindGodNodesTool
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                var model = compilation.GetSemanticModel(tree);
-                var root = await tree.GetRootAsync(ct);
-
+            await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
                 foreach (var symbol in CollectSymbols(root, model, kind, ct))
                     await ProcessSymbolAsync(symbol, solution, project.Name, seen, candidates, ct);
-            }
         }
 
         return candidates;
@@ -129,8 +123,6 @@ public static class FindGodNodesTool
     private static bool IsSystemSymbol(ISymbol symbol)
     {
         var ns = symbol.ContainingNamespace?.ToDisplayString();
-        return ns is not null &&
-               (ns.StartsWith("System", StringComparison.Ordinal) ||
-                ns.StartsWith("Microsoft", StringComparison.Ordinal));
+        return ns is not null && TypeStructureHelper.IsSystemNamespace(ns);
     }
 }

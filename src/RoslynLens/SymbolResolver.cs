@@ -226,6 +226,18 @@ public static class SymbolResolver
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    public static async Task<(string? Error, SemanticModel? Model, SyntaxNode? Body)> ResolveMethodBodyOrErrorAsync(
+        WorkspaceManager workspace, string methodName, string? className, CancellationToken ct)
+    {
+        var status = workspace.EnsureReadyOrStatus(ct);
+        if (status is not null) return (status, null, null);
+        var (model, body, _) = await ResolveMethodBodyAsync(workspace, methodName, className, ct);
+        if (model is null || body is null)
+            return (Json.Serialize(new { error = $"Method '{methodName}' not found or has no body" }), null, null);
+        return (null, model, body);
+    }
+
     public static async Task<(SemanticModel? Model, SyntaxNode? Body, SyntaxNode? MethodSyntax)> ResolveMethodBodyAsync(
         WorkspaceManager workspace,
         string methodName,

@@ -4,6 +4,17 @@ namespace RoslynLens;
 
 internal static class TypeStructureHelper
 {
+    internal static async IAsyncEnumerable<(SyntaxNode Root, SemanticModel Model)> GetTreeRootsAsync(
+        Compilation compilation,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    {
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return (await tree.GetRootAsync(ct), compilation.GetSemanticModel(tree));
+        }
+    }
+
     /// <summary>
     /// Yields all named types structurally referenced by a type:
     /// base type, interfaces, field/property types, method return types, and parameter types.
