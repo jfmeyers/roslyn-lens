@@ -28,34 +28,7 @@ public static class FindSurprisingDependenciesTool
             .Where(p => projectFilter is null || p.Name.Contains(projectFilter, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // Build namespace-level directed graph: (fromNs, toNs) → refCount + fromProject/toProject
-        var edges = new Dictionary<(string From, string To), EdgeData>(EdgeKeyComparer.Instance);
-        var nsToProject = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (var project in projects)
-        {
-            ct.ThrowIfCancellationRequested();
-            var compilation = await workspace.GetCompilationAsync(project, ct);
-            if (compilation is null) continue;
-
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                var model = compilation.GetSemanticModel(tree);
-                var root = await tree.GetRootAsync(ct);
-
-                foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
-                {
-                    if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
-
-                    var fromNs = type.ContainingNamespace?.ToDisplayString();
-                    if (string.IsNullOrEmpty(fromNs) || IsSystemNamespace(fromNs)) continue;
-
-                    nsToProject.TryAdd(fromNs, project.Name);
-                    CollectOutgoingEdges(type, fromNs, project.Name, edges, nsToProject, ct);
-                }
-            }
-        }
+        var (edges, nsToProject) = await BuildEdgeGraphAsync(workspace, projects, ct);
 
         if (edges.Count == 0)
             return Json.Serialize(new SurprisingDependenciesResult([], 0));
@@ -81,6 +54,61 @@ public static class FindSurprisingDependenciesTool
             HashCode.Combine(obj.From.GetHashCode(StringComparison.Ordinal), obj.To.GetHashCode(StringComparison.Ordinal));
     }
 
+    private static async Task<(Dictionary<(string, string), EdgeData> Edges, Dictionary<string, string> NsToProject)>
+        BuildEdgeGraphAsync(WorkspaceManager workspace, List<Project> projects, CancellationToken ct)
+    {
+        var edges = new Dictionary<(string From, string To), EdgeData>(EdgeKeyComparer.Instance);
+        var nsToProject = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var project in projects)
+        {
+            ct.ThrowIfCancellationRequested();
+            var compilation = await workspace.GetCompilationAsync(project, ct);
+            if (compilation is null) continue;
+
+            await ScanCompilationAsync(compilation, project.Name, edges, nsToProject, ct);
+        }
+
+        return (edges, nsToProject);
+    }
+
+    private static async Task ScanCompilationAsync(
+        Compilation compilation,
+        string projectName,
+        Dictionary<(string, string), EdgeData> edges,
+        Dictionary<string, string> nsToProject,
+        CancellationToken ct)
+    {
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            ct.ThrowIfCancellationRequested();
+            var model = compilation.GetSemanticModel(tree);
+            var root = await tree.GetRootAsync(ct);
+
+            ScanTreeForEdges(root, model, projectName, edges, nsToProject, ct);
+        }
+    }
+
+    private static void ScanTreeForEdges(
+        SyntaxNode root,
+        SemanticModel model,
+        string projectName,
+        Dictionary<(string, string), EdgeData> edges,
+        Dictionary<string, string> nsToProject,
+        CancellationToken ct)
+    {
+        foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+        {
+            if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
+
+            var fromNs = type.ContainingNamespace?.ToDisplayString();
+            if (string.IsNullOrEmpty(fromNs) || IsSystemNamespace(fromNs)) continue;
+
+            nsToProject.TryAdd(fromNs, projectName);
+            CollectOutgoingEdges(type, fromNs, projectName, edges, nsToProject, ct);
+        }
+    }
+
     private static void CollectOutgoingEdges(
         INamedTypeSymbol type,
         string fromNs,
@@ -89,33 +117,12 @@ public static class FindSurprisingDependenciesTool
         Dictionary<string, string> nsToProject,
         CancellationToken ct)
     {
-        var referencedTypes = new List<ITypeSymbol?>();
-
-        if (type.BaseType is not null) referencedTypes.Add(type.BaseType);
-        foreach (var iface in type.Interfaces) referencedTypes.Add(iface);
-
-        foreach (var member in type.GetMembers())
+        foreach (var targetType in TypeStructureHelper.CollectStructuralTypeRefs(type, ct))
         {
-            ct.ThrowIfCancellationRequested();
-            switch (member)
-            {
-                case IFieldSymbol f: referencedTypes.Add(f.Type); break;
-                case IPropertySymbol p: referencedTypes.Add(p.Type); break;
-                case IMethodSymbol m:
-                    referencedTypes.Add(m.ReturnType);
-                    foreach (var param in m.Parameters)
-                        referencedTypes.Add(param.Type);
-                    break;
-            }
-        }
-
-        foreach (var refType in referencedTypes)
-        {
-            if (refType is not INamedTypeSymbol named) continue;
-            var toNs = named.ContainingNamespace?.ToDisplayString();
+            var toNs = targetType.ContainingNamespace?.ToDisplayString();
             if (string.IsNullOrEmpty(toNs) || IsSystemNamespace(toNs) || toNs == fromNs) continue;
 
-            var toProject = named.ContainingAssembly?.Name ?? toNs;
+            var toProject = targetType.ContainingAssembly?.Name ?? toNs;
             nsToProject.TryAdd(toNs, toProject);
 
             var key = (fromNs, toNs);
@@ -133,7 +140,6 @@ public static class FindSurprisingDependenciesTool
         Dictionary<string, string> nsToProject,
         int maxResults)
     {
-        // Compute degree statistics
         var outDegree = new Dictionary<string, int>(StringComparer.Ordinal);
         var inDegree = new Dictionary<string, int>(StringComparer.Ordinal);
 
@@ -157,43 +163,7 @@ public static class FindSurprisingDependenciesTool
 
         foreach (var (key, data) in edges)
         {
-            var reasons = new List<string>();
-            var score = 0;
-
-            // Cross-assembly: highest surprise factor
-            var fromProj = nsToProject.GetValueOrDefault(key.From, "");
-            var toProj = nsToProject.GetValueOrDefault(key.To, "");
-            if (!string.Equals(fromProj, toProj, StringComparison.OrdinalIgnoreCase) &&
-                !string.IsNullOrEmpty(fromProj) && !string.IsNullOrEmpty(toProj))
-            {
-                score += 2;
-                reasons.Add($"cross-assembly ({fromProj} → {toProj})");
-            }
-
-            // Peripheral source: source namespace has very few outgoing deps
-            var srcOut = outDegree.GetValueOrDefault(key.From);
-            if (srcOut > 0 && srcOut <= medianOutDegree / 2.0)
-            {
-                score += 2;
-                reasons.Add($"peripheral source ({srcOut} outgoing deps)");
-            }
-
-            // Hub target: target namespace is heavily depended upon
-            var tgtIn = inDegree.GetValueOrDefault(key.To);
-            if (tgtIn > hubThreshold)
-            {
-                score += 1;
-                reasons.Add($"hub target ({tgtIn} incoming deps)");
-            }
-
-            // Semantic distance: short common prefix relative to namespace depth
-            var distance = ComputeNamespaceDistance(key.From, key.To);
-            if (distance >= 3)
-            {
-                score += 1;
-                reasons.Add($"distant namespaces (depth diff {distance})");
-            }
-
+            var (score, reasons) = ComputeSurpriseScore(key, data, outDegree, inDegree, nsToProject, hubThreshold, medianOutDegree);
             if (score > 0)
                 scored.Add((score, reasons, key.From, key.To, data.RefCount));
         }
@@ -206,6 +176,51 @@ public static class FindSurprisingDependenciesTool
             .ToList();
 
         return new SurprisingDependenciesResult(top, top.Count);
+    }
+
+    private static (int Score, List<string> Reasons) ComputeSurpriseScore(
+        (string From, string To) key,
+        EdgeData data,
+        Dictionary<string, int> outDegree,
+        Dictionary<string, int> inDegree,
+        Dictionary<string, string> nsToProject,
+        double hubThreshold,
+        double medianOutDegree)
+    {
+        var reasons = new List<string>();
+        var score = 0;
+
+        var fromProj = nsToProject.GetValueOrDefault(key.From, "");
+        var toProj = nsToProject.GetValueOrDefault(key.To, "");
+        if (!string.Equals(fromProj, toProj, StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrEmpty(fromProj) && !string.IsNullOrEmpty(toProj))
+        {
+            score += 2;
+            reasons.Add($"cross-assembly ({fromProj} → {toProj})");
+        }
+
+        var srcOut = outDegree.GetValueOrDefault(key.From);
+        if (srcOut > 0 && srcOut <= medianOutDegree / 2.0)
+        {
+            score += 2;
+            reasons.Add($"peripheral source ({srcOut} outgoing deps)");
+        }
+
+        var tgtIn = inDegree.GetValueOrDefault(key.To);
+        if (tgtIn > hubThreshold)
+        {
+            score += 1;
+            reasons.Add($"hub target ({tgtIn} incoming deps)");
+        }
+
+        var distance = ComputeNamespaceDistance(key.From, key.To);
+        if (distance >= 3)
+        {
+            score += 1;
+            reasons.Add($"distant namespaces (depth diff {distance})");
+        }
+
+        return (score, reasons);
     }
 
     private static int ComputeNamespaceDistance(string nsA, string nsB)

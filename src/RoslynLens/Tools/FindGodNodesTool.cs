@@ -78,25 +78,31 @@ public static class FindGodNodesTool
                 var model = compilation.GetSemanticModel(tree);
                 var root = await tree.GetRootAsync(ct);
 
-                var symbols = CollectSymbols(root, model, kind, ct);
-
-                foreach (var symbol in symbols)
-                {
-                    ct.ThrowIfCancellationRequested();
-                    var key = symbol.ToDisplayString();
-                    if (!seen.Add(key)) continue;
-                    if (IsSystemSymbol(symbol)) continue;
-
-                    var refs = await SymbolFinder.FindReferencesAsync(symbol, solution, ct);
-                    var refCount = refs.Sum(r => r.Locations.Count());
-
-                    var loc = SymbolResolver.GetLocation(symbol);
-                    candidates.Add(new Candidate(key, symbol.Kind.ToString(), refCount, loc.FilePath, loc.Line, project.Name));
-                }
+                foreach (var symbol in CollectSymbols(root, model, kind, ct))
+                    await ProcessSymbolAsync(symbol, solution, project.Name, seen, candidates, ct);
             }
         }
 
         return candidates;
+    }
+
+    private static async Task ProcessSymbolAsync(
+        ISymbol symbol,
+        Solution solution,
+        string projectName,
+        HashSet<string> seen,
+        List<Candidate> candidates,
+        CancellationToken ct)
+    {
+        var key = symbol.ToDisplayString();
+        if (!seen.Add(key)) return;
+        if (IsSystemSymbol(symbol)) return;
+
+        var refs = await SymbolFinder.FindReferencesAsync(symbol, solution, ct);
+        var refCount = refs.Sum(r => r.Locations.Count());
+
+        var loc = SymbolResolver.GetLocation(symbol);
+        candidates.Add(new Candidate(key, symbol.Kind.ToString(), refCount, loc.FilePath, loc.Line, projectName));
     }
 
     private static IEnumerable<ISymbol> CollectSymbols(

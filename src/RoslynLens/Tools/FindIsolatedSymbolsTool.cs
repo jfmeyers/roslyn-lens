@@ -36,9 +36,7 @@ public static class FindIsolatedSymbolsTool
             .Where(p => projectFilter is null || p.Name.Contains(projectFilter, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        // Collect all solution type names for outgoing-edge checks
         var solutionTypeNames = await CollectSolutionTypeNamesAsync(workspace, projects, ct);
-
         var isolated = new List<IsolatedSymbolEntry>();
 
         foreach (var project in projects)
@@ -49,46 +47,63 @@ public static class FindIsolatedSymbolsTool
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (isolated.Count >= maxResults) break;
-
-                var model = compilation.GetSemanticModel(tree);
-                var root = await tree.GetRootAsync(ct);
-
-                foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
-                {
-                    if (isolated.Count >= maxResults) break;
-                    ct.ThrowIfCancellationRequested();
-
-                    if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
-                    if (IsSystemType(type)) continue;
-                    if (ShouldSkip(type, includePublicTypes)) continue;
-
-                    // Check outgoing structural edges first (cheap — no Roslyn search)
-                    if (HasSolutionTypeReferences(type, solutionTypeNames)) continue;
-
-                    // Check incoming references (expensive — SymbolFinder)
-                    var refs = await SymbolFinder.FindReferencesAsync(type, solution, ct);
-                    var incomingCount = refs.Sum(r => r.Locations.Count());
-                    if (incomingCount > 0) continue;
-
-                    var loc = SymbolResolver.GetLocation(type);
-                    isolated.Add(new IsolatedSymbolEntry(
-                        type.ToDisplayString(),
-                        type.TypeKind.ToString(),
-                        loc.FilePath,
-                        loc.Line,
-                        project.Name));
-                }
-            }
+            await AnalyzeProjectAsync(compilation, project, solution, solutionTypeNames, includePublicTypes, maxResults, isolated, ct);
         }
 
         var result = new IsolatedSymbolsResult(isolated, isolated.Count);
         return solution.Projects.Count() > 1
             ? WorkspaceManager.SerializeWithMultiSolutionHint(result)
             : Json.Serialize(result);
+    }
+
+    private static async Task AnalyzeProjectAsync(
+        Compilation compilation,
+        Project project,
+        Solution solution,
+        HashSet<string> solutionTypeNames,
+        bool includePublicTypes,
+        int maxResults,
+        List<IsolatedSymbolEntry> isolated,
+        CancellationToken ct)
+    {
+        foreach (var tree in compilation.SyntaxTrees)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (isolated.Count >= maxResults) break;
+
+            var model = compilation.GetSemanticModel(tree);
+            var root = await tree.GetRootAsync(ct);
+
+            await AnalyzeTreeAsync(root, model, project, solution, solutionTypeNames, includePublicTypes, maxResults, isolated, ct);
+        }
+    }
+
+    private static async Task AnalyzeTreeAsync(
+        SyntaxNode root,
+        SemanticModel model,
+        Project project,
+        Solution solution,
+        HashSet<string> solutionTypeNames,
+        bool includePublicTypes,
+        int maxResults,
+        List<IsolatedSymbolEntry> isolated,
+        CancellationToken ct)
+    {
+        foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+        {
+            if (isolated.Count >= maxResults) break;
+            ct.ThrowIfCancellationRequested();
+
+            if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
+            if (IsSystemType(type) || ShouldSkip(type, includePublicTypes)) continue;
+            if (HasSolutionTypeReferences(type, solutionTypeNames)) continue;
+
+            var refs = await SymbolFinder.FindReferencesAsync(type, solution, ct);
+            if (refs.Sum(r => r.Locations.Count()) > 0) continue;
+
+            var loc = SymbolResolver.GetLocation(type);
+            isolated.Add(new IsolatedSymbolEntry(type.ToDisplayString(), type.TypeKind.ToString(), loc.FilePath, loc.Line, project.Name));
+        }
     }
 
     private static async Task<HashSet<string>> CollectSolutionTypeNamesAsync(
@@ -121,41 +136,16 @@ public static class FindIsolatedSymbolsTool
         return names;
     }
 
-    private static bool HasSolutionTypeReferences(INamedTypeSymbol type, HashSet<string> solutionTypes)
-    {
-        if (type.BaseType is not null && solutionTypes.Contains(type.BaseType.ToDisplayString()))
-            return true;
-
-        foreach (var iface in type.Interfaces)
-            if (solutionTypes.Contains(iface.ToDisplayString()))
-                return true;
-
-        foreach (var member in type.GetMembers())
-        {
-            ITypeSymbol? memberType = member switch
-            {
-                IFieldSymbol f => f.Type,
-                IPropertySymbol p => p.Type,
-                _ => null
-            };
-
-            if (memberType is INamedTypeSymbol named && solutionTypes.Contains(named.ToDisplayString()))
-                return true;
-        }
-
-        return false;
-    }
+    private static bool HasSolutionTypeReferences(INamedTypeSymbol type, HashSet<string> solutionTypes) =>
+        TypeStructureHelper.CollectStructuralTypeRefs(type)
+            .Any(t => solutionTypes.Contains(t.ToDisplayString()));
 
     private static bool ShouldSkip(INamedTypeSymbol type, bool includePublicTypes)
     {
-        // Skip compiler-generated, anonymous, and special types
         if (type.IsImplicitlyDeclared || type.IsAnonymousType) return true;
         if (type.TypeKind is TypeKind.Delegate or TypeKind.Enum) return true;
+        if (!includePublicTypes && type.DeclaredAccessibility == Accessibility.Public) return true;
 
-        if (!includePublicTypes && type.DeclaredAccessibility == Accessibility.Public)
-            return true;
-
-        // Skip types decorated with attributes that imply external consumption
         return type.GetAttributes().Any(a =>
             a.AttributeClass?.Name is "McpServerToolTypeAttribute" or "ApiControllerAttribute"
                 or "ControllerAttribute" or "SerializableAttribute");

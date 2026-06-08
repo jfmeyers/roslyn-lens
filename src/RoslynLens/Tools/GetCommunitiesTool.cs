@@ -28,38 +28,7 @@ public static class GetCommunitiesTool
         var projects = solution.Projects
             .Where(p => projectFilter is null || p.Name.Contains(projectFilter, StringComparison.OrdinalIgnoreCase));
 
-        // Build namespace → namespace weighted adjacency (undirected)
-        var nsEdges = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
-        var nsProjects = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        foreach (var project in projects)
-        {
-            ct.ThrowIfCancellationRequested();
-            var compilation = await workspace.GetCompilationAsync(project, ct);
-            if (compilation is null) continue;
-
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                var model = compilation.GetSemanticModel(tree);
-                var root = await tree.GetRootAsync(ct);
-
-                foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
-                {
-                    if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) continue;
-
-                    var sourceNs = type.ContainingNamespace?.ToDisplayString();
-                    if (string.IsNullOrEmpty(sourceNs) || IsSystemNamespace(sourceNs)) continue;
-
-                    if (!nsEdges.ContainsKey(sourceNs))
-                        nsEdges[sourceNs] = new Dictionary<string, int>(StringComparer.Ordinal);
-
-                    nsProjects.TryAdd(sourceNs, project.Name);
-
-                    CollectTypeReferences(type, sourceNs, nsEdges, ct);
-                }
-            }
-        }
+        var nsEdges = await BuildNamespaceGraphAsync(workspace, projects, ct);
 
         if (nsEdges.Count == 0)
             return Json.Serialize(new CommunitiesResult([], 0, 0));
@@ -71,39 +40,57 @@ public static class GetCommunitiesTool
         return WorkspaceManager.SerializeWithMultiSolutionHint(result);
     }
 
-    private static void CollectTypeReferences(
-        INamedTypeSymbol type,
-        string sourceNs,
+    private static async Task<Dictionary<string, Dictionary<string, int>>> BuildNamespaceGraphAsync(
+        WorkspaceManager workspace,
+        IEnumerable<Project> projects,
+        CancellationToken ct)
+    {
+        var nsEdges = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
+
+        foreach (var project in projects)
+        {
+            ct.ThrowIfCancellationRequested();
+            var compilation = await workspace.GetCompilationAsync(project, ct);
+            if (compilation is null) continue;
+
+            await ScanCompilationAsync(compilation, nsEdges, ct);
+        }
+
+        return nsEdges;
+    }
+
+    private static async Task ScanCompilationAsync(
+        Compilation compilation,
         Dictionary<string, Dictionary<string, int>> nsEdges,
         CancellationToken ct)
     {
-        var referencedTypes = new List<ITypeSymbol?>();
-
-        if (type.BaseType is not null)
-            referencedTypes.Add(type.BaseType);
-
-        foreach (var iface in type.Interfaces)
-            referencedTypes.Add(iface);
-
-        foreach (var member in type.GetMembers())
+        foreach (var tree in compilation.SyntaxTrees)
         {
             ct.ThrowIfCancellationRequested();
-            switch (member)
-            {
-                case IFieldSymbol f: referencedTypes.Add(f.Type); break;
-                case IPropertySymbol p: referencedTypes.Add(p.Type); break;
-                case IMethodSymbol m:
-                    referencedTypes.Add(m.ReturnType);
-                    foreach (var param in m.Parameters)
-                        referencedTypes.Add(param.Type);
-                    break;
-            }
-        }
+            var model = compilation.GetSemanticModel(tree);
+            var root = await tree.GetRootAsync(ct);
 
-        foreach (var refType in referencedTypes)
+            foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                RegisterTypeEdges(typeDecl, model, nsEdges, ct);
+        }
+    }
+
+    private static void RegisterTypeEdges(
+        TypeDeclarationSyntax typeDecl,
+        SemanticModel model,
+        Dictionary<string, Dictionary<string, int>> nsEdges,
+        CancellationToken ct)
+    {
+        if (model.GetDeclaredSymbol(typeDecl, ct) is not INamedTypeSymbol type) return;
+
+        var sourceNs = type.ContainingNamespace?.ToDisplayString();
+        if (string.IsNullOrEmpty(sourceNs) || IsSystemNamespace(sourceNs)) return;
+
+        nsEdges.TryAdd(sourceNs, new Dictionary<string, int>(StringComparer.Ordinal));
+
+        foreach (var targetType in TypeStructureHelper.CollectStructuralTypeRefs(type, ct))
         {
-            if (refType is not INamedTypeSymbol named) continue;
-            var targetNs = named.ContainingNamespace?.ToDisplayString();
+            var targetNs = targetType.ContainingNamespace?.ToDisplayString();
             if (string.IsNullOrEmpty(targetNs) || IsSystemNamespace(targetNs) || targetNs == sourceNs)
                 continue;
 
@@ -183,18 +170,16 @@ public static class GetCommunitiesTool
             var memberList = members
                 .Select(ns =>
                 {
-                    var degree = graph.TryGetValue(ns, out var neighbors)
-                        ? neighbors.Count
-                        : 0;
+                    var degree = graph.TryGetValue(ns, out var neighbors) ? neighbors.Count : 0;
                     return new CommunityMember(ns, degree);
                 })
                 .OrderByDescending(m => m.Degree)
                 .ToList();
 
-            var cohesion = ComputeCohesion(members, graph);
-            var commonPrefix = FindCommonPrefix(members);
-
-            entries.Add(new CommunityEntry(group.Key, memberList, cohesion, commonPrefix));
+            entries.Add(new CommunityEntry(
+                group.Key, memberList,
+                ComputeCohesion(members, graph),
+                FindCommonPrefix(members)));
         }
 
         return entries;
@@ -225,10 +210,7 @@ public static class GetCommunitiesTool
 
     private static string? FindCommonPrefix(IEnumerable<string> namespaces)
     {
-        var parts = namespaces
-            .Select(ns => ns.Split('.'))
-            .ToList();
-
+        var parts = namespaces.Select(ns => ns.Split('.')).ToList();
         if (parts.Count == 0) return null;
 
         var prefix = new List<string>();
