@@ -18,12 +18,8 @@ public static class AnalyzeDataFlowTool
         [Description("Optional containing class name")] string? className = null,
         CancellationToken ct = default)
     {
-        var status = workspace.EnsureReadyOrStatus(ct);
-        if (status is not null) return status;
-
-        var (model, body, _) = await SymbolResolver.ResolveMethodBodyAsync(workspace, methodName, className, ct);
-        if (model is null || body is null)
-            return Json.Serialize(new { error = $"Method '{methodName}' not found or has no body" });
+        var (err, model, body) = await SymbolResolver.ResolveMethodBodyOrErrorAsync(workspace, methodName, className, ct);
+        if (err is not null) return err;
 
         DataFlowAnalysis? analysis = null;
 

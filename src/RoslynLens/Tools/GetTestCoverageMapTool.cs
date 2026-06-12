@@ -50,15 +50,9 @@ public static class GetTestCoverageMapTool
             var compilation = await workspace.GetCompilationAsync(testProject, ct);
             if (compilation is null) continue;
 
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                var root = await tree.GetRootAsync(ct);
-
+            await foreach (var (root, _) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
                 foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
-                {
-                    testClassMap.TryAdd(typeDecl.Identifier.Text, (tree.FilePath, testProject.Name));
-                }
-            }
+                    testClassMap.TryAdd(typeDecl.Identifier.Text, (root.SyntaxTree.FilePath, testProject.Name));
         }
 
         return testClassMap;

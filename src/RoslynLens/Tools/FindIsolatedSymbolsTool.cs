@@ -70,14 +70,9 @@ public static class FindIsolatedSymbolsTool
         List<IsolatedSymbolEntry> isolated,
         CancellationToken ct)
     {
-        foreach (var tree in compilation.SyntaxTrees)
+        await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
         {
-            ct.ThrowIfCancellationRequested();
             if (isolated.Count >= ctx.MaxResults) break;
-
-            var model = compilation.GetSemanticModel(tree);
-            var root = await tree.GetRootAsync(ct);
-
             await AnalyzeTreeAsync(root, model, project, ctx, isolated, ct);
         }
     }
@@ -120,18 +115,10 @@ public static class FindIsolatedSymbolsTool
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is null) continue;
 
-            foreach (var tree in compilation.SyntaxTrees)
-            {
-                ct.ThrowIfCancellationRequested();
-                var model = compilation.GetSemanticModel(tree);
-                var root = await tree.GetRootAsync(ct);
-
+            await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
                 foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
-                {
                     if (model.GetDeclaredSymbol(typeDecl, ct) is INamedTypeSymbol type)
                         names.Add(type.ToDisplayString());
-                }
-            }
         }
 
         return names;
