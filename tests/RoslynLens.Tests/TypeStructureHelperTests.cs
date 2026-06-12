@@ -171,4 +171,44 @@ public class TypeStructureHelperTests
     {
         TypeStructureHelper.IsSystemNamespace(ns).ShouldBeFalse();
     }
+
+    [Fact]
+    public async Task GetTreeRootsAsync_YieldsRootAndModelForEachTree()
+    {
+        var tree1 = CSharpSyntaxTree.ParseText("namespace A { class Foo {} }");
+        var tree2 = CSharpSyntaxTree.ParseText("namespace B { class Bar {} }");
+        var compilation = CSharpCompilation.Create(
+            "Test",
+            [tree1, tree2],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
+
+        var results = new List<(SyntaxNode Root, SemanticModel Model)>();
+        await foreach (var item in TypeStructureHelper.GetTreeRootsAsync(compilation, TestContext.Current.CancellationToken))
+            results.Add(item);
+
+        results.Count.ShouldBe(2);
+        results[0].Root.ShouldNotBeNull();
+        results[0].Model.ShouldNotBeNull();
+        results[1].Root.ShouldNotBeNull();
+        results[1].Model.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task GetTreeRootsAsync_ThrowsOnCancellation()
+    {
+        var tree = CSharpSyntaxTree.ParseText("namespace A { class Foo {} }");
+        var compilation = CSharpCompilation.Create(
+            "Test",
+            [tree],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]);
+
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (var _ in TypeStructureHelper.GetTreeRootsAsync(compilation, cts.Token))
+            { }
+        });
+    }
 }

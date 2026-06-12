@@ -64,15 +64,9 @@ public static class GetCommunitiesTool
         Dictionary<string, Dictionary<string, int>> nsEdges,
         CancellationToken ct)
     {
-        foreach (var tree in compilation.SyntaxTrees)
-        {
-            ct.ThrowIfCancellationRequested();
-            var model = compilation.GetSemanticModel(tree);
-            var root = await tree.GetRootAsync(ct);
-
+        await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
             foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
                 RegisterTypeEdges(typeDecl, model, nsEdges, ct);
-        }
     }
 
     private static void RegisterTypeEdges(
