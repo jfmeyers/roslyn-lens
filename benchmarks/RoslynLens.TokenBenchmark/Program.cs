@@ -5,6 +5,7 @@ using Microsoft.Build.Locator;
 using Microsoft.CodeAnalysis;
 using Microsoft.ML.Tokenizers;
 using RoslynLens;
+using RoslynLens.TokenBenchmark;
 
 // Measures how many tokens RoslynLens saves versus reading source directly.
 //
@@ -209,4 +210,7 @@ static string BuildReport(
     return sb.ToString();
 }
 
-internal readonly record struct Row(string Name, int BaselineTokens, int LensTokens);
+namespace RoslynLens.TokenBenchmark
+{
+    internal readonly record struct Row(string Name, int BaselineTokens, int LensTokens);
+}

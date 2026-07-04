@@ -28,7 +28,18 @@ LABEL org.opencontainers.image.title="RoslynLens" \
       org.opencontainers.image.source="https://github.com/jfmeyers/roslyn-lens" \
       org.opencontainers.image.licenses="Apache-2.0"
 
+# Keep the .NET host quiet and self-contained under a writable home so the
+# container can run as a non-root user with no first-run/telemetry writes.
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    DOTNET_NOLOGO=1 \
+    DOTNET_CLI_HOME=/home/app
+
 COPY --from=build /app /app
+
+# Run as the non-root "app" user (uid 1654) that the .NET base image already
+# ships, rather than root. Analysis is read-only, so read access to the mounted
+# repository is enough.
+USER $APP_UID
 
 # The MCP client mounts the target repository here; discovery starts from the working dir.
 WORKDIR /workspace
