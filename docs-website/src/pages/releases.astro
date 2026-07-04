@@ -1,0 +1,115 @@
+---
+import Base from '../layouts/Base.astro';
+import { getReleases } from '../lib/releases';
+import { SITE } from '../consts';
+
+const releases = getReleases();
+const latest = releases[0]?.version;
+const changelogUrl = `${SITE.github}/blob/main/CHANGELOG.md`;
+---
+
+<Base title="Releases" description={`Release history and changelog for ${SITE.name}.`}>
+  <section class="rel container">
+    <header class="sec-head">
+      <p class="eyebrow">Releases</p>
+      <h1>Changelog</h1>
+      <p class="sub">
+        Every version and its notes, generated from <a href={changelogUrl} target="_blank" rel="noopener noreferrer">CHANGELOG.md</a>.
+        Install any version from <a href={SITE.nuget} target="_blank" rel="noopener noreferrer">NuGet</a>.
+      </p>
+    </header>
+
+    <ol class="timeline">
+      {releases.map((r) => (
+        <li class="rel-item" id={r.tag}>
+          <div class="rel-head">
+            <div class="rel-title">
+              <a href={`#${r.tag}`} class="rel-tag">{r.tag}</a>
+              {r.version === latest && <span class="pill">latest</span>}
+            </div>
+            <span class="rel-date">{r.date}</span>
+          </div>
+          <div class="rel-notes" set:html={r.bodyHtml} />
+          <p class="rel-link">
+            <a href={r.url} target="_blank" rel="noopener noreferrer">View on GitHub →</a>
+          </p>
+        </li>
+      ))}
+    </ol>
+  </section>
+</Base>
+
+<style>
+  .rel { padding-top: 56px; padding-bottom: 24px; position: relative; z-index: 1; max-width: 860px; }
+  .sec-head { margin-bottom: 34px; }
+  .sec-head h1 { font-size: clamp(2rem, 5vw, 2.9rem); margin: 10px 0 0; }
+  .sub { color: var(--text-muted); margin-top: 12px; font-size: 1.05rem; max-width: 60ch; }
+  .sub a { color: var(--accent-2); border-bottom: 1px solid color-mix(in oklab, var(--accent-2) 40%, transparent); }
+
+  .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+  .rel-item {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 86px;
+  }
+  .rel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .rel-title { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .rel-tag {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  .rel-tag:hover { color: var(--accent-2); }
+  .pill {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: #0a0b10;
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .rel-date { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-faint); }
+  .rel-link { margin: 18px 0 0; }
+  .rel-link a { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted); }
+  .rel-link a:hover { color: var(--accent-2); }
+
+  @media (max-width: 520px) {
+    .rel-item { padding: 18px; }
+  }
+</style>
+
+<style is:global>
+  .rel-notes { margin-top: 14px; color: var(--text-muted); font-size: 0.96rem; }
+  .rel-notes h3 {
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent-2);
+    margin: 20px 0 8px;
+  }
+  .rel-notes h3:first-child { margin-top: 0; }
+  .rel-notes ul { margin: 6px 0; padding-left: 1.2em; }
+  .rel-notes li { margin: 5px 0; }
+  .rel-notes li::marker { color: var(--text-faint); }
+  .rel-notes p { margin: 8px 0; }
+  .rel-notes a { color: var(--accent-2); border-bottom: 1px solid color-mix(in oklab, var(--accent-2) 40%, transparent); }
+  .rel-notes code {
+    font-family: var(--font-mono);
+    font-size: 0.84em;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.1em 0.36em;
+    color: var(--text);
+  }
+  .rel-notes strong { color: var(--text); }
+</style>
