@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetPublicApiTool
 {
-    [McpServerTool(Name = "get_public_api")]
+    [McpServerTool(Name = "get_public_api", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Get the public API surface of a type: all public methods, properties, fields, and events with their signatures.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

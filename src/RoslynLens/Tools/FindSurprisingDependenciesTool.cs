@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindSurprisingDependenciesTool
 {
-    [McpServerTool(Name = "find_surprising_dependencies")]
+    [McpServerTool(Name = "find_surprising_dependencies", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Detects semantically unexpected cross-namespace dependencies: peripheral namespaces reaching hub namespaces, cross-assembly couplings, and structurally distant connections. Scored by surprise factors; returns the most unexpected edges first.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

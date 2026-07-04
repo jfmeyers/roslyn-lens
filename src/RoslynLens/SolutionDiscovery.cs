@@ -2,10 +2,12 @@ namespace RoslynLens;
 
 /// <summary>
 /// Discovers .sln/.slnx files using BFS from a starting directory.
-/// Resolution order: explicit --solution arg > working directory BFS.
+/// Resolution order: explicit --solution arg > ROSLYN_LENS_SOLUTION env > working directory BFS.
 /// </summary>
 public static class SolutionDiscovery
 {
+    internal const string SolutionEnvVar = "ROSLYN_LENS_SOLUTION";
+
     internal static readonly HashSet<string> SkipDirectories = new(StringComparer.OrdinalIgnoreCase)
     {
         ".git", ".vs", ".idea", "node_modules", "bin", "obj",
@@ -20,7 +22,30 @@ public static class SolutionDiscovery
         if (explicitPath is not null)
             return explicitPath;
 
+        var envPath = ParseEnvPath();
+        if (envPath is not null)
+            return envPath;
+
         return BfsDiscovery(Directory.GetCurrentDirectory());
+    }
+
+    // Lets a host (e.g. the MCP bundle) point at a solution without passing CLI args.
+    // An empty/blank value is treated as unset so it falls through to discovery.
+    private static string? ParseEnvPath()
+    {
+        var value = Environment.GetEnvironmentVariable(SolutionEnvVar);
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var path = value.Trim();
+
+        if (File.Exists(path) && IsSolutionFile(path))
+            return Path.GetFullPath(path);
+
+        if (Directory.Exists(path))
+            return BfsDiscovery(path);
+
+        return null;
     }
 
     private static string? ParseExplicitPath(string[] args)

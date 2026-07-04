@@ -6,7 +6,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class SwitchSolutionTool
 {
-    [McpServerTool(Name = "switch_solution")]
+    [McpServerTool(Name = "switch_solution", ReadOnly = false, Destructive = false, Idempotent = true, OpenWorld = false)]
     [Description("Switch to a different solution from the discovered list. Use list_solutions to see available options.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

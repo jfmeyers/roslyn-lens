@@ -1,0 +1,232 @@
+{
+  "manifest_version": "0.3",
+  "name": "roslyn-lens",
+  "display_name": "RoslynLens",
+  "version": "1.4.0",
+  "description": "Token-efficient .NET codebase navigation via Roslyn — symbols, references, callers, graphs, and anti-pattern detection over MCP.",
+  "long_description": "RoslynLens gives AI coding agents a semantic, read-only view of your C# solution via Roslyn: find symbols, references, callers, implementations and overrides; walk type hierarchies and dependency graphs; run 18 built-in anti-pattern detectors and graph-level architecture analysis (communities, god nodes, surprising dependencies) — so the agent navigates by *structure* instead of re-reading source (77% pooled / 73% median token reduction, self-hosted benchmark).\n\nRequires the **.NET 10 SDK** on your machine: this bundle launches the server on demand with `dnx` (the SDK's NuGet tool runner), and the analysis tools load your real `.sln`/`.slnx` through MSBuild, which needs the SDK present. Nothing is pre-installed — `dnx` fetches and caches the `RoslynLens` NuGet package on first use. Point it at your solution with the *Solution path* setting, or leave it blank to auto-discover from the working directory.",
+  "author": {
+    "name": "Jean-Francois Meyers",
+    "url": "https://github.com/jfmeyers/roslyn-lens"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jfmeyers/roslyn-lens"
+  },
+  "homepage": "https://github.com/jfmeyers/roslyn-lens",
+  "documentation": "https://github.com/jfmeyers/roslyn-lens/tree/main/docs",
+  "support": "https://github.com/jfmeyers/roslyn-lens/issues",
+  "license": "Apache-2.0",
+  "icon": "icon.png",
+  "keywords": [
+    "mcp",
+    "roslyn",
+    "csharp",
+    "dotnet",
+    "code-analysis",
+    "semantic-navigation",
+    "claude-code"
+  ],
+  "server": {
+    "type": "binary",
+    "entry_point": "dnx",
+    "mcp_config": {
+      "command": "dnx",
+      "args": [
+        "RoslynLens",
+        "--yes"
+      ],
+      "env": {
+        "ROSLYN_LENS_SOLUTION": "${user_config.solution_path}",
+        "ROSLYN_LENS_LOG_LEVEL": "${user_config.log_level}",
+        "ROSLYN_LENS_TIMEOUT_SECONDS": "${user_config.timeout_seconds}",
+        "ROSLYN_LENS_MAX_RESULTS": "${user_config.max_results}",
+        "ROSLYN_LENS_CACHE_SIZE": "${user_config.cache_size}"
+      }
+    }
+  },
+  "user_config": {
+    "solution_path": {
+      "type": "file",
+      "title": "Solution path",
+      "description": "The .sln or .slnx to analyze. Leave blank to auto-discover from the working directory (BFS, 3 levels).",
+      "required": false
+    },
+    "log_level": {
+      "type": "string",
+      "title": "Log level",
+      "description": "Server log verbosity (logs go to stderr): Trace, Debug, Information, Warning, or Error.",
+      "required": false,
+      "default": "Information"
+    },
+    "timeout_seconds": {
+      "type": "number",
+      "title": "Operation timeout (seconds)",
+      "description": "Maximum time for a single analysis operation before returning a status response.",
+      "required": false,
+      "default": 30,
+      "min": 1
+    },
+    "max_results": {
+      "type": "number",
+      "title": "Max results per query",
+      "description": "Upper bound on results returned by a single tool call.",
+      "required": false,
+      "default": 100,
+      "min": 1
+    },
+    "cache_size": {
+      "type": "number",
+      "title": "Compilation cache size",
+      "description": "Number of project compilations kept in the LRU cache.",
+      "required": false,
+      "default": 20,
+      "min": 1
+    }
+  },
+  "tools": [
+    {
+      "name": "get_type_overview",
+      "description": "Compound tool: returns a type's public API, hierarchy, implementations, and diagnostics in a single call."
+    },
+    {
+      "name": "validate_granit_conventions",
+      "description": "Validate Granit framework conventions across the solution. Checks naming, security, EF Core patterns, and module dependency conventions...."
+    },
+    {
+      "name": "get_module_depends_on",
+      "description": "Analyze Granit module dependency tree. Finds classes inheriting from GranitModule, reads [DependsOn] attributes, and builds a dependency..."
+    },
+    {
+      "name": "get_test_coverage_map",
+      "description": "Maps production types to their test classes using naming conventions (e.g., Foo -> FooTests). Identifies types without test coverage."
+    },
+    {
+      "name": "analyze_data_flow",
+      "description": "Analyze data flow within a method: variable declarations, reads, writes, captured variables, and data flowing in/out."
+    },
+    {
+      "name": "detect_antipatterns",
+      "description": "Runs registered anti-pattern detectors on syntax trees and returns violations with suggestions."
+    },
+    {
+      "name": "find_references",
+      "description": "Find all references to a symbol across the solution. Classifies each reference by kind (inheritance, invocation, assignment, type-argumen..."
+    },
+    {
+      "name": "switch_solution",
+      "description": "Switch to a different solution from the discovered list. Use list_solutions to see available options."
+    },
+    {
+      "name": "get_public_api_batch",
+      "description": "Get the public API surface of multiple types in a single call. Accepts comma-separated type names."
+    },
+    {
+      "name": "find_implementations",
+      "description": "Find all implementations of an interface or all derived classes of a base class across the solution."
+    },
+    {
+      "name": "find_callers",
+      "description": "Find all callers (call sites) of a method across the solution."
+    },
+    {
+      "name": "find_dead_code",
+      "description": "Finds potentially unreferenced types, methods, and properties that may be dead code. Skips generated code (obj/bin, *.g.cs, <auto-generat..."
+    },
+    {
+      "name": "find_god_nodes",
+      "description": "Identifies types or methods with disproportionately high incoming reference counts (god nodes). Flags symbols whose reference count excee..."
+    },
+    {
+      "name": "find_isolated_symbols",
+      "description": "Finds types with no incoming references from the solution AND no structural dependencies on other solution types (degree 0). These are fu..."
+    },
+    {
+      "name": "get_symbol_detail",
+      "description": "Returns full signature, parameters, return type, and XML documentation for a symbol."
+    },
+    {
+      "name": "get_symbol_detail_batch",
+      "description": "Get detailed information about multiple symbols in a single call. Accepts comma-separated symbol names."
+    },
+    {
+      "name": "get_communities",
+      "description": "Partitions solution namespaces into cohesive communities via label-propagation over the type-reference graph. Returns each community with..."
+    },
+    {
+      "name": "analyze_method",
+      "description": "Compound tool: returns a method's signature, callers, dependency graph, and complexity metrics in a single call."
+    },
+    {
+      "name": "get_public_api",
+      "description": "Get the public API surface of a type: all public methods, properties, fields, and events with their signatures."
+    },
+    {
+      "name": "get_project_graph",
+      "description": "Returns the project dependency graph for the loaded solution, including target frameworks. Use projectFilter for large solutions."
+    },
+    {
+      "name": "resolve_external_source",
+      "description": "Resolve source code for external (NuGet/framework) symbols via SourceLink or decompilation. Use when a symbol is not in the local solution."
+    },
+    {
+      "name": "get_diagnostics",
+      "description": "Returns compiler and analyzer diagnostics for a file, project, or the entire solution."
+    },
+    {
+      "name": "find_symbol",
+      "description": "Find symbols (types, methods, properties, fields) by name across the solution. Optionally filter by kind (class, interface, struct, enum,..."
+    },
+    {
+      "name": "list_solutions",
+      "description": "Lists all discovered solution files with their paths and which one is currently active."
+    },
+    {
+      "name": "get_dependency_graph",
+      "description": "Builds a call dependency graph starting from a symbol, recursively walking invocations up to the specified depth."
+    },
+    {
+      "name": "get_complexity_metrics",
+      "description": "Compute cyclomatic complexity, cognitive complexity, nesting depth, and logical LOC for methods. Can target a single method or scan a typ..."
+    },
+    {
+      "name": "detect_circular_dependencies",
+      "description": "Detects circular dependencies in the project reference graph or type dependency graph using DFS cycle detection."
+    },
+    {
+      "name": "find_symbols_batch",
+      "description": "Find multiple symbols by name in a single call. Accepts comma-separated names. Each query is resolved independently."
+    },
+    {
+      "name": "analyze_control_flow",
+      "description": "Analyze control flow within a method: reachability, return points, and exit points."
+    },
+    {
+      "name": "find_overrides",
+      "description": "Find all overrides of a virtual or abstract method across the solution."
+    },
+    {
+      "name": "find_surprising_dependencies",
+      "description": "Detects semantically unexpected cross-namespace dependencies: peripheral namespaces reaching hub namespaces, cross-assembly couplings, an..."
+    },
+    {
+      "name": "detect_duplicates",
+      "description": "Detect structurally similar code blocks across the solution using AST fingerprinting. Returns groups of duplicate methods."
+    },
+    {
+      "name": "get_file_overview",
+      "description": "Compound tool: returns all types in a file, compiler diagnostics, and anti-pattern violations in a single call."
+    },
+    {
+      "name": "get_type_hierarchy",
+      "description": "Get the full type hierarchy for a class or interface: base types, implemented interfaces, and derived types."
+    }
+  ],
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "win32",
+      "linux"
+    ]
+  }
+}

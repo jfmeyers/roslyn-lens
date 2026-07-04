@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class DetectCircularDependenciesTool
 {
-    [McpServerTool(Name = "detect_circular_dependencies")]
+    [McpServerTool(Name = "detect_circular_dependencies", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Detects circular dependencies in the project reference graph or type dependency graph using DFS cycle detection.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

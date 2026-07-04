@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindSymbolsBatchTool
 {
-    [McpServerTool(Name = "find_symbols_batch")]
+    [McpServerTool(Name = "find_symbols_batch", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find multiple symbols by name in a single call. Accepts comma-separated names. Each query is resolved independently.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

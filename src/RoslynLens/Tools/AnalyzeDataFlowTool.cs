@@ -10,7 +10,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class AnalyzeDataFlowTool
 {
-    [McpServerTool(Name = "analyze_data_flow")]
+    [McpServerTool(Name = "analyze_data_flow", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Analyze data flow within a method: variable declarations, reads, writes, captured variables, and data flowing in/out.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

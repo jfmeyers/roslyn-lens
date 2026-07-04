@@ -10,7 +10,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindReferencesTool
 {
-    [McpServerTool(Name = "find_references")]
+    [McpServerTool(Name = "find_references", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find all references to a symbol across the solution. Classifies each reference by kind (inheritance, invocation, assignment, type-argument, parameter, instantiation).")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

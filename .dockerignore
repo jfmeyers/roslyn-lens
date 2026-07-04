@@ -1,0 +1,15 @@
+# Build artefacts — rebuilt inside the image
+**/bin/
+**/obj/
+nupkgs/
+
+# VCS and tooling
+.git/
+.github/
+.claude/
+
+# Docs and local files not needed for the build
+docs/
+*.md
+!README.md
+icon.*

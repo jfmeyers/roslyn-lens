@@ -214,4 +214,79 @@ public class SolutionDiscoveryTests : IDisposable
             Directory.SetCurrentDirectory(cwd);
         }
     }
+
+    [Fact]
+    public void FindSolutionPath_Uses_Env_Var_When_No_Arg()
+    {
+        var slnPath = CreateSolutionFile("Env.slnx");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", slnPath);
+            var result = SolutionDiscovery.FindSolutionPath([]);
+            result.ShouldNotBeNull();
+            result.ShouldEndWith("Env.slnx");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", null);
+        }
+    }
+
+    [Fact]
+    public void FindSolutionPath_Blank_Env_Var_Falls_Through_To_Bfs()
+    {
+        var cwd = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", "   ");
+            Directory.SetCurrentDirectory(_tempDir);
+            var result = SolutionDiscovery.FindSolutionPath([]);
+            result.ShouldBeNull();
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(cwd);
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", null);
+        }
+    }
+
+    [Fact]
+    public void FindSolutionPath_Env_Var_Directory_Is_Searched()
+    {
+        CreateSolutionFile("FromDir.slnx");
+
+        try
+        {
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", _tempDir);
+            var result = SolutionDiscovery.FindSolutionPath([]);
+            result.ShouldNotBeNull();
+            result.ShouldEndWith("FromDir.slnx");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", null);
+        }
+    }
+
+    [Fact]
+    public void FindSolutionPath_Nonexistent_Env_Var_Falls_Through_To_Bfs()
+    {
+        var cwd = Directory.GetCurrentDirectory();
+
+        try
+        {
+            Environment.SetEnvironmentVariable(
+                "ROSLYN_LENS_SOLUTION", Path.Combine(_tempDir, "does-not-exist.slnx"));
+            Directory.SetCurrentDirectory(_tempDir);
+            var result = SolutionDiscovery.FindSolutionPath([]);
+            result.ShouldBeNull();
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(cwd);
+            Environment.SetEnvironmentVariable("ROSLYN_LENS_SOLUTION", null);
+        }
+    }
 }

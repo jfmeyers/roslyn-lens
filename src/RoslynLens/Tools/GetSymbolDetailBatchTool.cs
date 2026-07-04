@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetSymbolDetailBatchTool
 {
-    [McpServerTool(Name = "get_symbol_detail_batch")]
+    [McpServerTool(Name = "get_symbol_detail_batch", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Get detailed information about multiple symbols in a single call. Accepts comma-separated symbol names.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

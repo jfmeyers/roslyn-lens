@@ -1,0 +1,48 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { SITE } from '../consts';
+const base = import.meta.env.BASE_URL;
+const docsHref = `${base}docs`;
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href={base}>
+      <img class="brand-mark" src={`${base}icon.svg`} alt="" width="26" height="26" />
+      <span class="brand-name">{SITE.name}</span>
+    </a>
+    <nav class="nav">
+      <a href={docsHref}>Docs</a>
+      <a href={`${docsHref}/comparison`}>Comparison</a>
+      <a href={`${docsHref}/BENCHMARKS`}>Benchmark</a>
+      <a href={SITE.github} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(14px);
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--border);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .brand { display: inline-flex; align-items: center; gap: 0.6em; font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; letter-spacing: -0.02em; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 7px; display: block; }
+  .nav { display: flex; align-items: center; gap: 1.35rem; font-size: 0.94rem; font-weight: 500; }
+  .nav a { color: var(--text-muted); transition: color 0.15s ease; }
+  .nav a:hover { color: var(--text); }
+  @media (max-width: 720px) {
+    .nav { gap: 0.9rem; font-size: 0.86rem; }
+    .nav a:nth-child(2), .nav a:nth-child(3) { display: none; }
+  }
+</style>

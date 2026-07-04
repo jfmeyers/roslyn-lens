@@ -51,8 +51,8 @@ jobs:
             /d:sonar.host.url="https://sonarcloud.io" \
             /d:sonar.token="$SONAR_TOKEN" \
             /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
-            /d:sonar.coverage.exclusions="**/Tests/**,**/Tools/**,**/Program.cs,**/WorkspaceInitializer.cs,**/WorkspaceManager.cs,**/Responses/**,**/DuplicateCodeDetector.cs,**/ExternalSourceResolver.cs,**/SymbolResolver.cs,**/EfCoreNoTrackingDetector.cs,**/SynchronousSaveChangesDetector.cs,**/MissingConfigureAwaitDetector.cs" \
-            /d:sonar.exclusions="**/.github/**,global.json" \
+            /d:sonar.coverage.exclusions="**/Tests/**,**/Tools/**,**/Program.cs,**/WorkspaceInitializer.cs,**/WorkspaceManager.cs,**/Responses/**,**/DuplicateCodeDetector.cs,**/ExternalSourceResolver.cs,**/SymbolResolver.cs,**/EfCoreNoTrackingDetector.cs,**/SynchronousSaveChangesDetector.cs,**/MissingConfigureAwaitDetector.cs,**/ToolInvocationLogging.cs,**/RoslynatorAnalyzers.cs" \
+            /d:sonar.exclusions="**/.github/**,global.json,**/docs-website/**" \
             /d:sonar.qualitygate.wait=true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

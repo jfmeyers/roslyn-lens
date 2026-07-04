@@ -5,7 +5,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>roslyn-lens</ToolCommandName>
     <PackageId>RoslynLens</PackageId>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
     <Description>Token-efficient .NET codebase navigation via Roslyn semantic analysis for Claude Code MCP</Description>
     <Authors>Jean-François Meyers</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
@@ -27,6 +27,21 @@
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.StringTools" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="ICSharpCode.Decompiler" />
+    <!-- Roslynator analyzers are loaded reflectively at runtime, not run against our own
+         build: ExcludeAssets="analyzers" keeps them out of the compiler here (they would
+         trip TreatWarningsAsErrors), GeneratePathProperty exposes the restore path. -->
+    <PackageReference Include="Roslynator.Analyzers" ExcludeAssets="analyzers" PrivateAssets="all" GeneratePathProperty="true" />
+  </ItemGroup>
+
+  <!-- Ship the Roslynator analyzer assemblies (built for roslyn4.7; forward-compatible with
+       our newer Roslyn) alongside the tool so get_diagnostics can load them on demand. -->
+  <ItemGroup>
+    <None Include="$(PkgRoslynator_Analyzers)\analyzers\dotnet\roslyn4.7\cs\*.dll"
+          Exclude="$(PkgRoslynator_Analyzers)\analyzers\dotnet\roslyn4.7\cs\*CodeFixes.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>roslynator\%(Filename)%(Extension)</Link>
+      <Visible>false</Visible>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

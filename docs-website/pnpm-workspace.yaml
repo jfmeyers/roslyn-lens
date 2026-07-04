@@ -1,0 +1,4 @@
+# esbuild ships a prebuilt binary via a postinstall script; allow it to run
+# (Astro/Vite depend on it). pnpm blocks dependency build scripts by default.
+allowBuilds:
+  esbuild: true

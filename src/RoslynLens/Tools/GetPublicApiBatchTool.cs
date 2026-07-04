@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetPublicApiBatchTool
 {
-    [McpServerTool(Name = "get_public_api_batch")]
+    [McpServerTool(Name = "get_public_api_batch", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Get the public API surface of multiple types in a single call. Accepts comma-separated type names.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

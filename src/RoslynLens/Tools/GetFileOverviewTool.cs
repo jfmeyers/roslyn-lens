@@ -10,7 +10,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetFileOverviewTool
 {
-    [McpServerTool(Name = "get_file_overview")]
+    [McpServerTool(Name = "get_file_overview", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Compound tool: returns all types in a file, compiler diagnostics, and anti-pattern violations in a single call.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

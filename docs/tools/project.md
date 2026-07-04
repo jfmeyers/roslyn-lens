@@ -26,17 +26,28 @@ truncated by `maxResults`).
 
 ## get_diagnostics
 
-Get compiler warnings and errors for a project or the entire solution.
+Get compiler warnings and errors for a file, project, or the entire solution.
+Optionally also run the bundled [Roslynator](https://github.com/dotnet/roslynator)
+analyzers (500+ rules) for richer style and refactoring suggestions.
 
 | Parameter | Type | Required | Description |
 | --------- | ---- | -------- | ----------- |
-| `scope` | string | no | `solution` (default) or `project` |
-| `path` | string | no | Project name or path (required when scope is `project`) |
-| `severityFilter` | string | no | `error`, `warning`, or `all` (default: `all`) |
+| `scope` | string | no | `solution` (default), `project`, or `file` |
+| `path` | string | no | File or project name/path (required for `file` and `project`) |
+| `severityFilter` | string | no | `error`, `warning` (default), `info`, or `hidden` |
+| `includeAnalyzers` | bool | no | Also run Roslynator analyzers (default: `false`) |
 
 **Example prompt:** "Show all compiler errors in MyApp.Security"
 
 **Returns:** Diagnostic ID, severity, message, file path, and line number.
+
+When `includeAnalyzers` is `true`, the server loads the Roslynator analyzers
+that ship alongside the tool and runs them over the compilation. This is
+noticeably slower than compiler-only diagnostics, so it stays off by default;
+lower the `severityFilter` to `info` or `hidden` to surface Roslynator's
+suggestion-level rules. Redundant "fade-out" companion diagnostics are dropped
+to keep responses token-efficient. If the analyzers cannot be loaded, the tool
+transparently falls back to compiler-only diagnostics.
 
 ---
 

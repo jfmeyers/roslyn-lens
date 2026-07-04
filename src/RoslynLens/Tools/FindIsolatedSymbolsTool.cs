@@ -15,7 +15,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindIsolatedSymbolsTool
 {
-    [McpServerTool(Name = "find_isolated_symbols")]
+    [McpServerTool(Name = "find_isolated_symbols", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Finds types with no incoming references from the solution AND no structural dependencies on other solution types (degree 0). These are fully disconnected components — distinct from dead code, which may still reference other types.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "S107:Methods should not have too many parameters", Justification = "MCP tool parameters are protocol-mandated")]
     public static async Task<string> ExecuteAsync(

@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class DetectAntiPatternsTool
 {
-    [McpServerTool(Name = "detect_antipatterns")]
+    [McpServerTool(Name = "detect_antipatterns", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Runs registered anti-pattern detectors on syntax trees and returns violations with suggestions.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

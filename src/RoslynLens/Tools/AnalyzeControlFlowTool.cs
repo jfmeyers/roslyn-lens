@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class AnalyzeControlFlowTool
 {
-    [McpServerTool(Name = "analyze_control_flow")]
+    [McpServerTool(Name = "analyze_control_flow", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Analyze control flow within a method: reachability, return points, and exit points.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

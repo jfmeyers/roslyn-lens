@@ -17,6 +17,9 @@ nupkgs/
 TestResults/
 coverage/
 
+## MCP bundle build artifact (packed from mcpb/manifest.json)
+*.mcpb
+
 ## OS
 .DS_Store
 Thumbs.db

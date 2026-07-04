@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetProjectGraphTool
 {
-    [McpServerTool(Name = "get_project_graph")]
+    [McpServerTool(Name = "get_project_graph", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Returns the project dependency graph for the loaded solution, including target frameworks. Use projectFilter for large solutions.")]
     public static Task<string> ExecuteAsync(
         WorkspaceManager workspace,

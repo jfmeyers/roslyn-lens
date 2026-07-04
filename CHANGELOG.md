@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-04
+
+### Added
+
+- MCP tool annotations on every tool (`readOnlyHint`, `idempotentHint`,
+  `openWorldHint`) so hosts can reason about permissions and caching. All tools
+  are read-only except `switch_solution`, which is marked writable but
+  non-destructive and idempotent
+- Per-call invocation logging: each `tools/call` is wrapped in a filter that
+  logs a short correlation id, the tool name, wall-clock duration, and
+  success/failure/cancellation to stderr — traces a client-visible error back
+  to a specific server log line
+- `benchmarks/RoslynLens.TokenBenchmark` — a reproducible, offline token-savings
+  benchmark that compares full source files against the real `get_public_api`
+  output using the GPT-4o (`o200k_base`) tokenizer; writes `docs/BENCHMARKS.md`
+  (77% pooled / 73% median reduction self-hosted)
+- `Dockerfile` + `.dockerignore` for containerized distribution (SDK-based image,
+  required because `MSBuildWorkspace` evaluates MSBuild at runtime)
+- MCP Bundle manifest under `mcpb/` for one-click installation in Claude Desktop
+  (packs to a `.mcpb` via `npx @anthropic-ai/mcpb pack`); launches the server
+  with `dnx` and exposes solution path, timeout, cache size, log level, and max
+  results through the bundle's settings UI
+- `ROSLYN_LENS_SOLUTION` environment variable to point at a `.sln`/`.slnx` (or a
+  directory to search) without a CLI argument; resolution order is now
+  `--solution` arg > `ROSLYN_LENS_SOLUTION` > working-directory auto-discovery
+- Documentation website under `docs-website/` — an Astro site generated from the
+  existing `docs/**` markdown (landing page, sidebar docs, light/dark theme),
+  deployed to GitHub Pages via `.github/workflows/deploy-website.yml`
+- `get_diagnostics` gains an opt-in `includeAnalyzers` parameter (default
+  `false`) that runs the bundled Roslynator analyzers (500+ rules) over the
+  compilation. The analyzers ship next to the tool and load reflectively at
+  runtime; redundant "fade-out" companion diagnostics are filtered out, and the
+  tool falls back to compiler-only diagnostics if they cannot be loaded. The
+  `file` scope and `info`/`hidden` severity filters are now documented
+
+### Changed
+
+- Roslynator.Analyzers 4.15.0 bundled with the tool (Apache-2.0), excluded from
+  RoslynLens's own compilation to avoid affecting its build
+- Microsoft.ML.Tokenizers 2.0.0 + Data.O200kBase 2.0.0 added (benchmark-only,
+  not shipped in the tool); Microsoft.Bcl.Memory pinned to 10.0.9 to override a
+  vulnerable 9.0.4 pulled transitively (GHSA-73j8-2gch-69rq)
+
 ## [1.3.0] - 2026-06-08
 
 ### Added

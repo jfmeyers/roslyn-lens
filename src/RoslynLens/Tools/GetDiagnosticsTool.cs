@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using System.ComponentModel;
 using RoslynLens.Responses;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using ModelContextProtocol.Server;
 
 namespace RoslynLens;
@@ -8,13 +10,14 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetDiagnosticsTool
 {
-    [McpServerTool(Name = "get_diagnostics")]
+    [McpServerTool(Name = "get_diagnostics", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Returns compiler and analyzer diagnostics for a file, project, or the entire solution.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,
         [Description("Scope: 'file', 'project', or 'solution' (default 'solution')")] string scope = "solution",
         [Description("File or project path (required for 'file' and 'project' scopes)")] string? path = null,
         [Description("Minimum severity filter: 'error', 'warning', 'info', or 'hidden' (default 'warning')")] string severityFilter = "warning",
+        [Description("Also run the bundled Roslynator analyzers (500+ rules). Slower; off by default.")] bool includeAnalyzers = false,
         CancellationToken ct = default)
     {
         var status = workspace.EnsureReadyOrStatus(ct);
@@ -28,15 +31,15 @@ public static class GetDiagnosticsTool
 
         return scope.ToLowerInvariant() switch
         {
-            "file" => await AnalyzeFileScopeAsync(workspace, solution, path, minSeverity, ct),
-            "project" => await AnalyzeProjectScopeAsync(workspace, solution, path, minSeverity, ct),
-            _ => await AnalyzeSolutionScopeAsync(workspace, solution, minSeverity, ct)
+            "file" => await AnalyzeFileScopeAsync(workspace, solution, path, minSeverity, includeAnalyzers, ct),
+            "project" => await AnalyzeProjectScopeAsync(workspace, solution, path, minSeverity, includeAnalyzers, ct),
+            _ => await AnalyzeSolutionScopeAsync(workspace, solution, minSeverity, includeAnalyzers, ct)
         };
     }
 
     private static async Task<string> AnalyzeFileScopeAsync(
         WorkspaceManager workspace, Solution solution, string? path,
-        DiagnosticSeverity minSeverity, CancellationToken ct)
+        DiagnosticSeverity minSeverity, bool includeAnalyzers, CancellationToken ct)
     {
         if (path is null)
             return Json.Serialize(new { error = "Path is required for file scope" });
@@ -57,8 +60,17 @@ public static class GetDiagnosticsTool
             var tree = await doc.GetSyntaxTreeAsync(ct);
             if (tree is null) continue;
 
-            var model = compilation.GetSemanticModel(tree);
-            CollectDiagnostics(model.GetDiagnostics(cancellationToken: ct), minSeverity, diagnostics);
+            if (includeAnalyzers)
+            {
+                // Analyzers run per compilation; keep only diagnostics located in this file.
+                var all = await RunWithAnalyzersAsync(compilation, ct);
+                CollectDiagnostics(all.Where(d => d.Location.SourceTree == tree), minSeverity, diagnostics);
+            }
+            else
+            {
+                var model = compilation.GetSemanticModel(tree);
+                CollectDiagnostics(model.GetDiagnostics(cancellationToken: ct), minSeverity, diagnostics);
+            }
             break;
         }
 
@@ -67,7 +79,7 @@ public static class GetDiagnosticsTool
 
     private static async Task<string> AnalyzeProjectScopeAsync(
         WorkspaceManager workspace, Solution solution, string? path,
-        DiagnosticSeverity minSeverity, CancellationToken ct)
+        DiagnosticSeverity minSeverity, bool includeAnalyzers, CancellationToken ct)
     {
         if (path is null)
             return Json.Serialize(new { error = "Path is required for project scope" });
@@ -82,14 +94,14 @@ public static class GetDiagnosticsTool
         var diagnostics = new List<DiagnosticInfo>();
         var compilation = await workspace.GetCompilationAsync(project, ct);
         if (compilation is not null)
-            CollectDiagnostics(compilation.GetDiagnostics(ct), minSeverity, diagnostics);
+            CollectDiagnostics(await GetDiagnosticsAsync(compilation, includeAnalyzers, ct), minSeverity, diagnostics);
 
         return SerializeResult(diagnostics, "project");
     }
 
     private static async Task<string> AnalyzeSolutionScopeAsync(
         WorkspaceManager workspace, Solution solution,
-        DiagnosticSeverity minSeverity, CancellationToken ct)
+        DiagnosticSeverity minSeverity, bool includeAnalyzers, CancellationToken ct)
     {
         var diagnostics = new List<DiagnosticInfo>();
 
@@ -98,10 +110,37 @@ public static class GetDiagnosticsTool
             ct.ThrowIfCancellationRequested();
             var compilation = await workspace.GetCompilationAsync(project, ct);
             if (compilation is not null)
-                CollectDiagnostics(compilation.GetDiagnostics(ct), minSeverity, diagnostics);
+                CollectDiagnostics(await GetDiagnosticsAsync(compilation, includeAnalyzers, ct), minSeverity, diagnostics);
         }
 
         return SerializeResult(diagnostics, "solution");
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync(
+        Compilation compilation, bool includeAnalyzers, CancellationToken ct) =>
+        includeAnalyzers
+            ? await RunWithAnalyzersAsync(compilation, ct)
+            : compilation.GetDiagnostics(ct);
+
+    private static async Task<ImmutableArray<Diagnostic>> RunWithAnalyzersAsync(
+        Compilation compilation, CancellationToken ct)
+    {
+        var analyzers = RoslynatorAnalyzers.Analyzers;
+        if (analyzers.IsEmpty)
+            return compilation.GetDiagnostics(ct);
+
+        var options = new CompilationWithAnalyzersOptions(
+            new AnalyzerOptions([]),
+            onAnalyzerException: null,
+            concurrentAnalysis: true,
+            logAnalyzerExecutionTime: false);
+
+        // GetAllDiagnosticsAsync returns compiler diagnostics plus every analyzer's output.
+        var all = await compilation.WithAnalyzers(analyzers, options).GetAllDiagnosticsAsync(ct);
+
+        // Drop Roslynator's "fade out" companion diagnostics — they only tell an IDE which
+        // spans to grey out and duplicate the real finding, so they are pure token noise.
+        return all.Where(d => !d.Id.EndsWith("FadeOut", StringComparison.Ordinal)).ToImmutableArray();
     }
 
     private static string SerializeResult(List<DiagnosticInfo> diagnostics, string scope)

@@ -7,7 +7,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class ListSolutionsTool
 {
-    [McpServerTool(Name = "list_solutions")]
+    [McpServerTool(Name = "list_solutions", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Lists all discovered solution files with their paths and which one is currently active.")]
     public static Task<string> ExecuteAsync(
         WorkspaceManager workspace,
