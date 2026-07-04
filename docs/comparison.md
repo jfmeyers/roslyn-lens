@@ -6,8 +6,9 @@ How RoslynLens compares to other Roslyn-based MCP servers.
 
 | Feature | RoslynLens | SharpLensMcp | RoslynMCP | SharpToolsMCP | CodeAnalysisMCP |
 | ------- | ---------- | ------------ | --------- | ------------- | --------------- |
-| **Tools** | 30 | 58 | 5 | ~20 | 3 |
+| **Tools** | 34 | 58 | 5 | ~20 | 3 |
 | **Anti-pattern detectors** | 19 | 0 | 0 | 0 | 0 |
+| **Roslynator analyzers (opt-in)** | Yes (500+ rules) | No | No | No | No |
 | **Complexity metrics** | Yes | Yes | Yes | Yes | No |
 | **Data flow analysis** | Yes | Yes | No | No | No |
 | **Duplicate detection** | Yes | No | No | No | No |
@@ -23,6 +24,9 @@ How RoslynLens compares to other Roslyn-based MCP servers.
 | **Auto solution discovery** | Yes (BFS + multi-solution) | No | No | No | No |
 | **Global dotnet tool** | Yes | Yes | No | No | No |
 | **File watcher** | Yes | No | No | No | No |
+| **MCP tool annotations** | Yes | No | No | No | No |
+| **Reproducible token benchmark** | Yes | No | No | No | No |
+| **Docker image** | Yes | No | No | No | No |
 | **LRU compilation cache** | Yes (configurable) | Yes | Yes | No | No |
 | **Token-optimized responses** | Yes (30-150 tokens) | Relative paths | No | Stripped indentation | No |
 | **.NET version** | 10 | 8 | 8 | 8 | 9 |
@@ -48,7 +52,12 @@ How RoslynLens compares to other Roslyn-based MCP servers.
    test classes.
 
 6. **Token efficiency** — Responses are 30-150 tokens. Minimal property names,
-   no unnecessary data.
+   no unnecessary data. A reproducible, offline benchmark
+   ([docs/BENCHMARKS.md](BENCHMARKS.md)) measures a 77% pooled / 73% median
+   token reduction versus reading source, self-hosted on this repository.
+
+7. **Optional Roslynator analyzers** — `get_diagnostics` can run the bundled
+   Roslynator ruleset (500+ rules) on demand, on top of the curated detectors.
 
 ### What others do better
 

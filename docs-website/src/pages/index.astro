@@ -1,0 +1,183 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { SITE, STATS, FEATURES, TOOL_GROUPS, INSTALL } from '../consts';
+const base = import.meta.env.BASE_URL;
+const docsHref = `${base}docs`;
+---
+
+<Base>
+  <!-- Hero -->
+  <section class="hero container">
+    <p class="eyebrow">Model Context Protocol · Roslyn · .NET 10</p>
+    <h1>
+      Navigate C# by <span class="accent-text">structure</span>,<br />
+      not by re-reading source.
+    </h1>
+    <p class="lede">{SITE.description}</p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href={`${docsHref}/getting-started/quickstart`}>Get started →</a>
+      <a class="btn btn-ghost" href={SITE.github} target="_blank" rel="noopener noreferrer">Star on GitHub</a>
+    </div>
+    <div class="hero-install card">
+      <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      <code>dotnet tool install --global RoslynLens</code>
+    </div>
+  </section>
+
+  <!-- Stat band -->
+  <section class="container">
+    <div class="stats">
+      {STATS.map((s) => (
+        <div class="stat">
+          <div class="stat-value accent-text">{s.value}</div>
+          <div class="stat-label">{s.label}</div>
+          <div class="stat-sub">{s.sub}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="container section">
+    <header class="section-head">
+      <p class="eyebrow">What it does</p>
+      <h2>A semantic lens over your solution</h2>
+      <p class="section-sub">Thirty-four MCP tools built on the Roslyn compiler platform — read-only, token-optimized, and aware of your real project references.</p>
+    </header>
+    <div class="feature-grid">
+      {FEATURES.map((f) => (
+        <article class="card feature">
+          <div class="feature-icon"><Icon name={f.icon} /></div>
+          <h3>{f.title}</h3>
+          <p>{f.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <!-- Tools -->
+  <section class="container section">
+    <header class="section-head">
+      <p class="eyebrow">The toolbox</p>
+      <h2>34 tools, six families</h2>
+      <p class="section-sub">From single-symbol lookups to whole-solution architecture graphs and batch queries.</p>
+    </header>
+    <div class="tool-grid">
+      {TOOL_GROUPS.map((g) => (
+        <div class="card tool-card">
+          <h3>{g.label}</h3>
+          <ul>
+            {g.tools.map((t) => <li><code>{t}</code></li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+    <div class="center"><a class="btn btn-ghost" href={docsHref}>Browse the full reference →</a></div>
+  </section>
+
+  <!-- Install -->
+  <section class="container section">
+    <header class="section-head">
+      <p class="eyebrow">Install</p>
+      <h2>Wire it up in a minute</h2>
+      <p class="section-sub">Works with Claude Code, Claude Desktop, Cursor and Copilot over stdio.</p>
+    </header>
+    <div class="install card">
+      <div class="install-tabs" role="tablist">
+        {INSTALL.map((opt, i) => (
+          <button class:list={['install-tab', { active: i === 0 }]} data-tab={opt.id} role="tab">{opt.label}</button>
+        ))}
+      </div>
+      {INSTALL.map((opt, i) => (
+        <div class:list={['install-panel', { active: i === 0 }]} data-panel={opt.id}>
+          <pre><code>{opt.code}</code></pre>
+          <p class="install-note">{opt.note}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="container section">
+    <div class="cta card">
+      <h2>Give your agent a compiler, not a grep.</h2>
+      <p>Read-only, reproducible, and measured — 77% fewer tokens on navigation tasks.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href={`${docsHref}/getting-started/quickstart`}>Read the quickstart →</a>
+        <a class="btn btn-ghost" href={`${docsHref}/comparison`}>How it compares</a>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script is:inline>
+  document.querySelectorAll('.install-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const id = tab.getAttribute('data-tab');
+      document.querySelectorAll('.install-tab').forEach((t) => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.install-panel').forEach((p) =>
+        p.classList.toggle('active', p.getAttribute('data-panel') === id),
+      );
+    });
+  });
+</script>
+
+<style>
+  section { position: relative; z-index: 1; }
+  .hero { text-align: center; padding: 92px 24px 8px; }
+  .hero h1 { font-size: clamp(2.4rem, 6vw, 4.1rem); margin: 18px auto 0; max-width: 16ch; }
+  .lede { color: var(--text-muted); font-size: clamp(1.05rem, 2.2vw, 1.28rem); max-width: 58ch; margin: 22px auto 0; }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 30px; }
+  .hero-install { display: flex; align-items: center; gap: 14px; max-width: 480px; margin: 34px auto 0; padding: 14px 18px; text-align: left; }
+  .hero-install code { color: var(--text); font-size: 0.92rem; }
+  .dots { display: inline-flex; gap: 6px; }
+  .dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--border-strong); }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 60px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; text-align: center; }
+  .stat-value { font-family: var(--font-display); font-weight: 700; font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -0.03em; }
+  .stat-label { font-weight: 600; margin-top: 4px; }
+  .stat-sub { color: var(--text-faint); font-size: 0.82rem; margin-top: 4px; }
+
+  .section { padding-top: 92px; }
+  .section-head { text-align: center; max-width: 60ch; margin: 0 auto 40px; }
+  .section-head h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); margin-top: 10px; }
+  .section-sub { color: var(--text-muted); margin-top: 12px; font-size: 1.05rem; }
+
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .feature h3 { font-size: 1.15rem; margin: 14px 0 8px; }
+  .feature p { color: var(--text-muted); margin: 0; font-size: 0.96rem; }
+  .feature-icon { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; background: var(--accent-soft); border: 1px solid var(--border); color: var(--accent-2); }
+
+  .tool-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .tool-card h3 { font-size: 1.02rem; margin: 0 0 12px; }
+  .tool-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  .tool-card code { font-size: 0.84rem; color: var(--text-muted); }
+  .center { text-align: center; margin-top: 34px; }
+
+  .install { padding: 0; overflow: hidden; }
+  .install-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--panel); }
+  .install-tab { appearance: none; background: none; border: none; color: var(--text-muted); font-family: var(--font-body); font-weight: 600; font-size: 0.92rem; padding: 14px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+  .install-tab:hover { color: var(--text); }
+  .install-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .install-panel { display: none; padding: 22px; }
+  .install-panel.active { display: block; }
+  .install-panel pre { margin: 0; background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; overflow-x: auto; }
+  .install-panel code { color: #c9d1e4; font-size: 0.9rem; }
+  .install-note { color: var(--text-faint); font-size: 0.88rem; margin: 12px 0 0; }
+
+  .cta { text-align: center; padding: 48px 28px; background:
+      radial-gradient(120% 120% at 50% 0%, var(--accent-soft), transparent 70%), var(--bg-elev); }
+  .cta h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); max-width: 20ch; margin-inline: auto; }
+  .cta p { color: var(--text-muted); margin: 12px auto 24px; max-width: 46ch; }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .feature-grid, .tool-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 620px) {
+    .hero { padding-top: 64px; }
+    .stats, .feature-grid, .tool-grid { grid-template-columns: 1fr; }
+  }
+</style>

@@ -12,6 +12,7 @@ All environment variables use the `ROSLYN_LENS_` prefix.
 | `ROSLYN_LENS_MAX_RESULTS` | int | 100 | Maximum number of results returned per query |
 | `ROSLYN_LENS_CACHE_SIZE` | int | 20 | Number of project compilations kept in the LRU cache |
 | `ROSLYN_LENS_LOG_LEVEL` | string | Information | Log verbosity: `Trace`, `Debug`, `Information`, `Warning`, `Error` |
+| `ROSLYN_LENS_SOLUTION` | string | _(unset)_ | Path to a `.sln`/`.slnx` (or a directory to search). Used when no `--solution` argument is given; blank falls through to auto-discovery |
 
 ### Setting env vars in `.mcp.json`
 
@@ -47,8 +48,11 @@ claude mcp add --scope user --transport stdio \
 | -------- | ----- | ----------- |
 | `--solution <path>` | `-s` | Explicit path to `.sln` or `.slnx` file |
 
-When no `--solution` is provided, RoslynLens uses BFS auto-discovery from the
-current working directory (max 3 levels up). It prefers `.slnx` over `.sln`.
+Solutions are resolved in this order: the `--solution` argument, then the
+`ROSLYN_LENS_SOLUTION` environment variable, then BFS auto-discovery from the
+current working directory (max 3 levels up). Auto-discovery prefers `.slnx`
+over `.sln`. The environment variable is what the Claude Desktop bundle uses to
+inject the solution chosen in its settings UI.
 
 ### Skipped directories during auto-discovery
 

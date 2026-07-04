@@ -1,0 +1,153 @@
+---
+import Base from './Base.astro';
+import { getSidebar, docHref, type DocEntry } from '../lib/docs';
+import { SITE } from '../consts';
+
+interface Props {
+  entry: DocEntry;
+}
+
+const { entry } = Astro.props;
+const sidebar = getSidebar();
+const editUrl = `${SITE.github}/blob/main/${entry.githubPath}`;
+---
+
+<Base title={entry.title} description={`${entry.title} — ${SITE.name} documentation`}>
+  <div class="docs-layout container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <nav>
+        {sidebar.map((group) => (
+          <div class="side-group">
+            <p class="side-label">{group.label}</p>
+            <ul>
+              {group.items.map((item) => (
+                <li>
+                  <a
+                    href={docHref(item)}
+                    class:list={['side-link', { active: item.slug === entry.slug }]}
+                  >{item.title}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
+
+    <!-- Content -->
+    <article class="doc">
+      <div class="prose" set:html={entry.html} />
+      <footer class="doc-footer">
+        <a href={editUrl} target="_blank" rel="noopener noreferrer">Edit this page on GitHub ↗</a>
+      </footer>
+    </article>
+
+    <!-- On this page -->
+    <aside class="toc">
+      {entry.toc.length > 0 && (
+        <div class="toc-inner">
+          <p class="side-label">On this page</p>
+          <ul>
+            {entry.toc.map((h) => (
+              <li class:list={[{ nested: h.depth === 3 }]}>
+                <a href={`#${h.id}`} set:html={h.text} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </aside>
+  </div>
+</Base>
+
+<style>
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr) 200px;
+    gap: 40px;
+    align-items: start;
+    padding-top: 40px;
+    position: relative;
+    z-index: 1;
+  }
+  .sidebar, .toc { position: sticky; top: 88px; align-self: start; max-height: calc(100vh - 108px); overflow-y: auto; }
+  .side-group { margin-bottom: 22px; }
+  .side-label { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint); margin: 0 0 8px; }
+  .sidebar ul, .toc ul { list-style: none; margin: 0; padding: 0; }
+  .side-link { display: block; padding: 5px 10px; border-radius: 7px; color: var(--text-muted); font-size: 0.9rem; line-height: 1.35; transition: color 0.12s ease, background 0.12s ease; }
+  .side-link:hover { color: var(--text); background: var(--panel); }
+  .side-link.active { color: var(--text); background: var(--accent-soft); font-weight: 600; }
+
+  .toc li { margin: 4px 0; }
+  .toc li.nested { padding-left: 12px; }
+  .toc a { color: var(--text-muted); font-size: 0.83rem; }
+  .toc a:hover { color: var(--text); }
+
+  .doc { min-width: 0; padding-bottom: 20px; }
+  .doc-footer { margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--border); font-size: 0.9rem; }
+  .doc-footer a { color: var(--text-muted); }
+  .doc-footer a:hover { color: var(--accent); }
+
+  @media (max-width: 1080px) {
+    .docs-layout { grid-template-columns: 220px minmax(0, 1fr); }
+    .toc { display: none; }
+  }
+  @media (max-width: 780px) {
+    .docs-layout { grid-template-columns: 1fr; gap: 20px; }
+    .sidebar { position: static; max-height: none; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  }
+</style>
+
+<!-- Prose styles are global (applied to injected markdown HTML) -->
+<style is:global>
+  .prose { font-size: 1rem; line-height: 1.72; color: var(--text); }
+  .prose > :first-child { margin-top: 0; }
+  .prose h1 { font-size: clamp(1.9rem, 4vw, 2.5rem); margin: 0 0 8px; }
+  .prose h2 { font-size: 1.5rem; margin: 44px 0 14px; padding-top: 8px; }
+  .prose h3 { font-size: 1.18rem; margin: 30px 0 10px; }
+  .prose h4 { font-size: 1.02rem; margin: 22px 0 8px; }
+  .prose p, .prose ul, .prose ol { margin: 0 0 16px; }
+  .prose a { color: var(--accent-2); text-decoration: none; border-bottom: 1px solid color-mix(in oklab, var(--accent-2) 40%, transparent); }
+  .prose a:hover { border-bottom-color: var(--accent-2); }
+  .prose ul, .prose ol { padding-left: 1.35em; }
+  .prose li { margin: 6px 0; }
+  .prose li::marker { color: var(--text-faint); }
+  .prose strong { color: var(--text); font-weight: 700; }
+
+  .prose code {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.12em 0.4em;
+  }
+  .prose pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    overflow-x: auto;
+    margin: 0 0 20px;
+  }
+  .prose pre code { background: none; border: none; padding: 0; font-size: 0.86rem; color: #c9d1e4; }
+
+  .prose blockquote {
+    margin: 0 0 18px;
+    padding: 2px 18px;
+    border-left: 3px solid var(--accent);
+    color: var(--text-muted);
+    background: var(--panel);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .prose table { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 0.92rem; display: block; overflow-x: auto; }
+  .prose th, .prose td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top; }
+  .prose th { background: var(--bg-elev-2); font-weight: 600; }
+  .prose tr:nth-child(even) td { background: var(--panel); }
+
+  .prose hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+  .prose img { max-width: 100%; border-radius: 10px; }
+  .prose h2, .prose h3 { scroll-margin-top: 88px; }
+</style>

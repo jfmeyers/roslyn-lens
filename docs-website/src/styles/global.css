@@ -1,0 +1,173 @@
+/* ---------------------------------------------------------------------------
+   RoslynLens website — design tokens + base styles
+   Dark-first, with a light theme via [data-theme="light"] on <html>.
+--------------------------------------------------------------------------- */
+
+:root {
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Hanken Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Brand accent — a "lens" violet → cyan */
+  --accent: #7c6cff;
+  --accent-2: #22d3ee;
+  --accent-soft: color-mix(in oklab, var(--accent) 18%, transparent);
+
+  /* Dark theme (default) */
+  --bg: #0a0b10;
+  --bg-elev: #12141c;
+  --bg-elev-2: #171a24;
+  --panel: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --text: #e7e9f0;
+  --text-muted: #a2a7b6;
+  --text-faint: #6f7484;
+  --code-bg: #0d0f16;
+
+  --radius: 14px;
+  --radius-sm: 9px;
+  --maxw: 1120px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 40px -12px rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='light'] {
+  --bg: #fbfbfd;
+  --bg-elev: #ffffff;
+  --bg-elev-2: #f4f5f9;
+  --panel: rgba(10, 12, 20, 0.02);
+  --border: rgba(10, 12, 20, 0.1);
+  --border-strong: rgba(10, 12, 20, 0.18);
+  --text: #14161d;
+  --text-muted: #565b6b;
+  --text-faint: #878da0;
+  --code-bg: #0d0f16;
+  --shadow: 0 1px 2px rgba(10, 12, 20, 0.06), 0 18px 40px -20px rgba(10, 12, 20, 0.25);
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 88px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* Ambient glow behind the hero */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20% 0 auto 0;
+  height: 620px;
+  background:
+    radial-gradient(60% 60% at 20% 0%, color-mix(in oklab, var(--accent) 22%, transparent), transparent 70%),
+    radial-gradient(50% 50% at 85% 10%, color-mix(in oklab, var(--accent-2) 14%, transparent), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.9;
+}
+
+a { color: inherit; text-decoration: none; }
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+code, pre, kbd { font-family: var(--font-mono); }
+
+.container {
+  width: 100%;
+  max-width: var(--maxw);
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.accent-text {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Buttons ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.72em 1.15em;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn-primary {
+  background: linear-gradient(100deg, var(--accent), color-mix(in oklab, var(--accent-2) 65%, var(--accent)));
+  color: #0a0b10;
+  box-shadow: 0 6px 22px -8px var(--accent);
+}
+.btn-ghost {
+  background: var(--bg-elev);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.btn-ghost:hover { border-color: var(--accent); }
+
+/* Cards / panels --------------------------------------------------------- */
+.card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+/* Highlight.js — code blocks are always dark for consistency ------------- */
+pre code.hljs { display: block; overflow-x: auto; padding: 0; background: transparent; }
+.hljs { color: #c9d1e4; }
+.hljs-comment, .hljs-quote { color: #6a7386; font-style: italic; }
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in, .hljs-name, .hljs-tag { color: #a68cff; }
+.hljs-string, .hljs-title, .hljs-section, .hljs-attribute, .hljs-literal, .hljs-template-tag,
+.hljs-template-variable, .hljs-type, .hljs-addition { color: #6ee7ce; }
+.hljs-number, .hljs-symbol, .hljs-bullet, .hljs-link { color: #79c0ff; }
+.hljs-title.class_, .hljs-class .hljs-title, .hljs-doctag, .hljs-attr { color: #63d3ea; }
+.hljs-meta, .hljs-selector-id, .hljs-selector-class { color: #ffa657; }
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: 700; }
+
+::selection { background: var(--accent-soft); }
+
+/* Focus visibility ------------------------------------------------------- */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  .container { padding-inline: 18px; }
+}

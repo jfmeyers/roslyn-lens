@@ -35,7 +35,7 @@ large .NET solutions.
 | `get_symbol_detail` | Full signature, parameters, return type, and XML docs |
 | `get_project_graph` | Solution dependency tree (with filtering for large solutions) |
 | `get_dependency_graph` | Method call chain visualization |
-| `get_diagnostics` | Compiler warnings and errors |
+| `get_diagnostics` | Compiler warnings and errors (opt-in Roslynator analyzers) |
 | `get_test_coverage_map` | Heuristic test coverage mapping |
 | `get_complexity_metrics` | Cyclomatic, cognitive complexity, nesting depth, LOC |
 | `detect_antipatterns` | 18 anti-pattern detectors |
@@ -85,6 +85,14 @@ large .NET solutions.
 | GR-CFGAWAIT | MissingConfigureAwaitDetector | Missing `ConfigureAwait(false)` in library code |
 | GR-DTO | DtoSuffixDetector | Classes/records with `*Dto` suffix |
 
+### Optional Roslynator analyzers
+
+Beyond the curated detectors above, `get_diagnostics` can optionally run the
+bundled [Roslynator](https://github.com/dotnet/roslynator) analyzers (500+
+rules) by passing `includeAnalyzers: true`. They ship with the tool and load on
+demand, so the default path stays compiler-only and fast. See
+[docs/tools/project.md](docs/tools/project.md) for details.
+
 ## Requirements
 
 - .NET 10 SDK or later (to run the tool itself)
@@ -99,6 +107,31 @@ installed so MSBuild can restore and load it.
 
 ```bash
 dotnet tool install --global RoslynLens
+```
+
+### Claude Desktop (one-click bundle)
+
+RoslynLens ships an [MCP Bundle](https://github.com/anthropics/mcpb) manifest in
+[`mcpb/`](mcpb/manifest.json). Pack it and drag the `.mcpb` into **Claude
+Desktop → Settings → Extensions** — no manual config editing. The bundle picks
+your solution path and tuning through a settings UI and launches the server via
+`dnx` (so the .NET 10 SDK is still required):
+
+```bash
+npx @anthropic-ai/mcpb pack mcpb roslyn-lens.mcpb
+```
+
+See [docs/getting-started/installation.md](docs/getting-started/installation.md).
+
+### Docker
+
+A container image bundles the .NET SDK (required because `MSBuildWorkspace`
+evaluates MSBuild at runtime). Mount the repository to analyse at `/workspace`
+and keep stdin open (`-i`) so the server can speak MCP over stdio:
+
+```bash
+docker build -t roslyn-lens .
+docker run --rm -i -v "$PWD":/workspace roslyn-lens
 ```
 
 ## Usage
@@ -167,6 +200,23 @@ dotnet pack -c Release -o ./nupkgs
 dotnet tool install --global --add-source ./nupkgs RoslynLens
 ```
 
+## Token efficiency
+
+RoslynLens exists to let an agent navigate a codebase by structure instead of
+re-reading source. A reproducible benchmark quantifies the saving: for every
+single-type source file it compares the full file against the real
+`get_public_api` response, counting both with the GPT-4o (`o200k_base`)
+tokenizer whose vocabulary ships embedded in the package — so the run is fully
+offline.
+
+```bash
+dotnet run --project benchmarks/RoslynLens.TokenBenchmark -c Release
+```
+
+Self-hosted on this repository it reports a **77% pooled / 73% median** token
+reduction. Results and a per-type table are written to
+[docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
 ## Configuration
 
 Environment variables for runtime tuning:
@@ -217,7 +267,10 @@ auto-discovery, and global tool distribution.
 
 ## Documentation
 
-Full documentation is available in the [docs/](docs/README.md) directory.
+Full documentation is available in the [docs/](docs/README.md) directory and
+online at **<https://jfmeyers.github.io/roslyn-lens/>** — an Astro site
+([docs-website/](docs-website/)) generated from those same markdown files and
+deployed to GitHub Pages.
 
 ## Author
 

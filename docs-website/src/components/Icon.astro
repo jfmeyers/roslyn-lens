@@ -1,0 +1,31 @@
+---
+interface Props {
+  name: string;
+}
+const { name } = Astro.props;
+
+// Lucide-style stroke icons — inline so no emoji/font dependency.
+const PATHS: Record<string, string> = {
+  search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  graph:
+    '<circle cx="5" cy="6" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M6.7 7.6 10.3 16M17.3 7.6 13.7 16M7.5 6h9"/>',
+  warning: '<path d="M12 3 2.5 20h19L12 3Z"/><path d="M12 10v5"/><path d="M12 18h.01"/>',
+  tokens: '<path d="M3 6h18M3 12h18M3 18h12"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
+  lock: '<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+};
+const path = PATHS[name] ?? PATHS.search;
+---
+
+<svg
+  width="22"
+  height="22"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="1.9"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  aria-hidden="true"
+  set:html={path}
+/>

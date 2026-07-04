@@ -4,7 +4,7 @@ This file lists the third-party libraries used by the **RoslynLens**
 project along with their respective licenses. It is updated whenever an
 external dependency is added or modified.
 
-Last updated: 2026-06-08
+Last updated: 2026-07-04
 
 ---
 
@@ -13,7 +13,7 @@ Last updated: 2026-06-08
 | License | Package count |
 | ------- | ------------- |
 | MIT | 7 |
-| Apache-2.0 | 1 |
+| Apache-2.0 | 2 |
 
 ---
 
@@ -36,3 +36,22 @@ Last updated: 2026-06-08
 | Package | Version | Copyright |
 | ------- | ------- | --------- |
 | ModelContextProtocol | 1.4.0 | © LF Projects, LLC |
+| Roslynator.Analyzers | 4.15.0 | © Josef Pihrt |
+
+Roslynator.Analyzers is bundled with the tool but excluded from RoslynLens's own
+compilation; its analyzer assemblies are loaded on demand at runtime.
+
+---
+
+## Development dependencies
+
+These are used only by the `RoslynLens.TokenBenchmark` project and the test
+suite. They are **not** part of the distributed `RoslynLens` tool.
+
+### MIT
+
+| Package | Version | Copyright |
+| ------- | ------- | --------- |
+| Microsoft.ML.Tokenizers | 2.0.0 | © Microsoft Corporation |
+| Microsoft.ML.Tokenizers.Data.O200kBase | 2.0.0 | © Microsoft Corporation |
+| Microsoft.Bcl.Memory | 10.0.9 | © Microsoft Corporation |
