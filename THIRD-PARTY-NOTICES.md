@@ -24,11 +24,11 @@ Last updated: 2026-06-08
 | Package | Version | Copyright |
 | ------- | ------- | --------- |
 | Microsoft.Build.Locator | 1.11.2 | © Microsoft Corporation |
-| Microsoft.Build.Framework | 18.6.3 | © Microsoft Corporation |
-| Microsoft.NET.StringTools | 18.6.3 | © Microsoft Corporation |
-| Microsoft.CodeAnalysis.CSharp.Workspaces | 5.3.0 | © Microsoft Corporation |
-| Microsoft.CodeAnalysis.Workspaces.MSBuild | 5.3.0 | © Microsoft Corporation |
-| Microsoft.Extensions.Hosting | 10.0.8 | © Microsoft Corporation |
+| Microsoft.Build.Framework | 18.7.1 | © Microsoft Corporation |
+| Microsoft.NET.StringTools | 18.7.1 | © Microsoft Corporation |
+| Microsoft.CodeAnalysis.CSharp.Workspaces | 5.6.0 | © Microsoft Corporation |
+| Microsoft.CodeAnalysis.Workspaces.MSBuild | 5.6.0 | © Microsoft Corporation |
+| Microsoft.Extensions.Hosting | 10.0.9 | © Microsoft Corporation |
 | ICSharpCode.Decompiler | 10.1.0.8386 | © Daniel Grunwald and contributors |
 
 ### Apache-2.0
