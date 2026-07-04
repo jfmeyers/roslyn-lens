@@ -11,6 +11,10 @@ const year = 2026;
       <div>
         <div class="fname">{SITE.name}</div>
         <p class="ftag">{SITE.tagline}</p>
+        <p class="fmaker">
+          From the builder of
+          <a href="https://granit-fx.dev" target="_blank" rel="noopener noreferrer">Granit&nbsp;FX ↗</a>
+        </p>
       </div>
     </div>
     <nav class="footer-nav">
@@ -33,6 +37,9 @@ const year = 2026;
   .brand-mark { width: 28px; height: 28px; border-radius: 8px; flex: none; display: block; }
   .fname { font-family: var(--font-display); font-weight: 700; }
   .ftag { margin: 2px 0 0; color: var(--text-muted); font-size: 0.9rem; max-width: 34ch; }
+  .fmaker { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-faint); }
+  .fmaker a { color: var(--accent-2); border-bottom: 1px solid color-mix(in oklab, var(--accent-2) 40%, transparent); }
+  .fmaker a:hover { border-bottom-color: var(--accent-2); }
   .footer-nav { display: flex; gap: 1.3rem; flex-wrap: wrap; font-size: 0.92rem; }
   .footer-nav a { color: var(--text-muted); }
   .footer-nav a:hover { color: var(--text); }
