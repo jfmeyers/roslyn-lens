@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindOverridesTool
 {
-    [McpServerTool(Name = "find_overrides")]
+    [McpServerTool(Name = "find_overrides", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find all overrides of a virtual or abstract method across the solution.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

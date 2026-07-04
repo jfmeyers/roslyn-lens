@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetComplexityMetricsTool
 {
-    [McpServerTool(Name = "get_complexity_metrics")]
+    [McpServerTool(Name = "get_complexity_metrics", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Compute cyclomatic complexity, cognitive complexity, nesting depth, and logical LOC for methods. Can target a single method or scan a type/project for hotspots.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

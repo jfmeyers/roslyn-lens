@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class ResolveExternalSourceTool
 {
-    [McpServerTool(Name = "resolve_external_source")]
+    [McpServerTool(Name = "resolve_external_source", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Resolve source code for external (NuGet/framework) symbols via SourceLink or decompilation. Use when a symbol is not in the local solution.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

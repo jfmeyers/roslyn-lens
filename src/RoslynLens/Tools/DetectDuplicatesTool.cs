@@ -7,7 +7,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class DetectDuplicatesTool
 {
-    [McpServerTool(Name = "detect_duplicates")]
+    [McpServerTool(Name = "detect_duplicates", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Detect structurally similar code blocks across the solution using AST fingerprinting. Returns groups of duplicate methods.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

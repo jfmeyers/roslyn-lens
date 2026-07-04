@@ -12,7 +12,7 @@ public static class GetModuleDependsOnTool
 {
     private const string ModuleSuffix = "Module";
 
-    [McpServerTool(Name = "get_module_depends_on")]
+    [McpServerTool(Name = "get_module_depends_on", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Analyze Granit module dependency tree. Finds classes inheriting from GranitModule, reads [DependsOn] attributes, and builds a dependency graph to the specified depth.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

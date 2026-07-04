@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetCommunitiesTool
 {
-    [McpServerTool(Name = "get_communities")]
+    [McpServerTool(Name = "get_communities", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Partitions solution namespaces into cohesive communities via label-propagation over the type-reference graph. Returns each community with a cohesion score (0–1) and common namespace prefix.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

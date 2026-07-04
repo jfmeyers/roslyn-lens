@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetTestCoverageMapTool
 {
-    [McpServerTool(Name = "get_test_coverage_map")]
+    [McpServerTool(Name = "get_test_coverage_map", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Maps production types to their test classes using naming conventions (e.g., Foo -> FooTests). Identifies types without test coverage.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

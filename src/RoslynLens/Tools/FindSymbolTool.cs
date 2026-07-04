@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindSymbolTool
 {
-    [McpServerTool(Name = "find_symbol")]
+    [McpServerTool(Name = "find_symbol", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find symbols (types, methods, properties, fields) by name across the solution. Optionally filter by kind (class, interface, struct, enum, record, method, property, field, event, namespace).")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

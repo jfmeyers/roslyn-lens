@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindCallersTool
 {
-    [McpServerTool(Name = "find_callers")]
+    [McpServerTool(Name = "find_callers", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find all callers (call sites) of a method across the solution.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

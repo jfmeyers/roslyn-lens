@@ -10,7 +10,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindGodNodesTool
 {
-    [McpServerTool(Name = "find_god_nodes")]
+    [McpServerTool(Name = "find_god_nodes", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Identifies types or methods with disproportionately high incoming reference counts (god nodes). Flags symbols whose reference count exceeds mean + threshold × stddev. These are coupling hotspots worth reviewing for decomposition.")]
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "S107:Methods should not have too many parameters", Justification = "MCP tool parameters are protocol-mandated")]
     public static async Task<string> ExecuteAsync(

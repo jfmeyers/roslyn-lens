@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetTypeHierarchyTool
 {
-    [McpServerTool(Name = "get_type_hierarchy")]
+    [McpServerTool(Name = "get_type_hierarchy", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Get the full type hierarchy for a class or interface: base types, implemented interfaces, and derived types.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

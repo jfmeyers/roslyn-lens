@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class FindImplementationsTool
 {
-    [McpServerTool(Name = "find_implementations")]
+    [McpServerTool(Name = "find_implementations", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Find all implementations of an interface or all derived classes of a base class across the solution.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

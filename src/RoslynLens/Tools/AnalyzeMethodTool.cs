@@ -10,7 +10,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class AnalyzeMethodTool
 {
-    [McpServerTool(Name = "analyze_method")]
+    [McpServerTool(Name = "analyze_method", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Compound tool: returns a method's signature, callers, dependency graph, and complexity metrics in a single call.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

@@ -9,7 +9,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetTypeOverviewTool
 {
-    [McpServerTool(Name = "get_type_overview")]
+    [McpServerTool(Name = "get_type_overview", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Compound tool: returns a type's public API, hierarchy, implementations, and diagnostics in a single call.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

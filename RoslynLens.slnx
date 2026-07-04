@@ -5,4 +5,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/RoslynLens.Tests/RoslynLens.Tests.csproj" />
   </Folder>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/RoslynLens.TokenBenchmark/RoslynLens.TokenBenchmark.csproj" />
+  </Folder>
 </Solution>

@@ -32,7 +32,8 @@ builder.Services.AddHostedService<WorkspaceInitializer>();
 builder.Services
     .AddMcpServer()
     .WithStdioServerTransport()
-    .WithToolsFromAssembly();
+    .WithToolsFromAssembly()
+    .WithToolInvocationLogging();
 
 var app = builder.Build();
 await app.RunAsync();

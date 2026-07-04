@@ -15,6 +15,13 @@
     <PackageVersion Include="Microsoft.NET.StringTools" Version="18.7.1" />
     <!-- Decompilation -->
     <PackageVersion Include="ICSharpCode.Decompiler" Version="10.1.0.8386" />
+    <!-- Optional Roslynator analyzers, loaded at runtime for opt-in get_diagnostics -->
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0" />
+    <!-- Token benchmark (real GPT tokenizer with offline-embedded vocab) -->
+    <PackageVersion Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
+    <PackageVersion Include="Microsoft.ML.Tokenizers.Data.O200kBase" Version="2.0.0" />
+    <!-- Pin patched version: Tokenizers 2.0.0 pulls a vulnerable 9.0.4 transitively (GHSA-73j8-2gch-69rq) -->
+    <PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.9" />
     <!-- Testing -->
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.7.0" />
     <PackageVersion Include="xunit.v3" Version="3.2.2" />

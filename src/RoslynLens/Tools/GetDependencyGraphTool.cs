@@ -13,7 +13,7 @@ public static class GetDependencyGraphTool
     private static readonly HashSet<string> SkippedNamespacePrefixes =
         ["System", "Microsoft"];
 
-    [McpServerTool(Name = "get_dependency_graph")]
+    [McpServerTool(Name = "get_dependency_graph", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Builds a call dependency graph starting from a symbol, recursively walking invocations up to the specified depth.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

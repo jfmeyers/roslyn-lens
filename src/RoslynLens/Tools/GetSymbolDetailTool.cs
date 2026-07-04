@@ -8,7 +8,7 @@ namespace RoslynLens;
 [McpServerToolType]
 public static class GetSymbolDetailTool
 {
-    [McpServerTool(Name = "get_symbol_detail")]
+    [McpServerTool(Name = "get_symbol_detail", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Returns full signature, parameters, return type, and XML documentation for a symbol.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,

@@ -45,7 +45,7 @@ public static class ValidateGranitConventionsTool
         new DtoSuffixDetector()
     ];
 
-    [McpServerTool(Name = "validate_granit_conventions")]
+    [McpServerTool(Name = "validate_granit_conventions", ReadOnly = true, Idempotent = true, OpenWorld = false)]
     [Description("Validate Granit framework conventions across the solution. Checks naming, security, EF Core patterns, and module dependency conventions. Returns violations grouped by category.")]
     public static async Task<string> ExecuteAsync(
         WorkspaceManager workspace,
