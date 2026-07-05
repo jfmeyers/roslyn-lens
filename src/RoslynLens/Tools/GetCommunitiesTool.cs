@@ -65,8 +65,10 @@ public static class GetCommunitiesTool
         CancellationToken ct)
     {
         await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
+        {
             foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
                 RegisterTypeEdges(typeDecl, model, nsEdges, ct);
+        }
     }
 
     private static void RegisterTypeEdges(

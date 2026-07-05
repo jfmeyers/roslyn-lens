@@ -28,7 +28,9 @@ internal static class GeneratedCode
 
         if (path.Contains("/obj/", StringComparison.OrdinalIgnoreCase) ||
             path.Contains("/bin/", StringComparison.OrdinalIgnoreCase))
+        {
             return true;
+        }
 
         var name = path[(path.LastIndexOf('/') + 1)..];
         return GeneratedSuffixes.Any(s => name.EndsWith(s, StringComparison.OrdinalIgnoreCase));

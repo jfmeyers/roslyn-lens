@@ -67,7 +67,7 @@ public static class ComplexityAnalyzer
 
                 case BinaryExpressionSyntax bin when bin.IsKind(SyntaxKind.LogicalAndExpression)
                     || bin.IsKind(SyntaxKind.LogicalOrExpression):
-                    total += 1;
+                    total++;
                     total += CalculateCognitiveRecursive(child, nesting);
                     break;
 
@@ -91,7 +91,7 @@ public static class ComplexityAnalyzer
             score += CalculateCognitiveRecursive(ifStmt.Statement, nesting + 1);
         if (ifStmt.Else is null) return score;
 
-        score += 1;
+        score++;
         score += ifStmt.Else.Statement is IfStatementSyntax
             ? CalculateCognitiveRecursive(ifStmt.Else, nesting)
             : CalculateCognitiveRecursive(ifStmt.Else, nesting + 1);

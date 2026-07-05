@@ -109,8 +109,8 @@ public static class GetModuleDependsOnTool
 
         var dependsOnArgs = classDecl.AttributeLists
             .SelectMany(al => al.Attributes)
-            .Where(a => a.Name.ToString() is "DependsOn" or "DependsOnAttribute")
-            .Where(a => a.ArgumentList is not null)
+            .Where(a => a.Name.ToString() is "DependsOn" or "DependsOnAttribute"
+                && a.ArgumentList is not null)
             .SelectMany(a => a.ArgumentList!.Arguments);
 
         foreach (var arg in dependsOnArgs)
@@ -190,13 +190,11 @@ public static class GetModuleDependsOnTool
         else
         {
             children = info?.DependsOn
-                .Select(d => ResolveModuleName(d, moduleMap) ?? d)
-                .ToList() ?? [];
+                .ConvertAll(d => ResolveModuleName(d, moduleMap) ?? d) ?? [];
         }
 
         var childDeps = children
-            .Select(c => BuildTree(c, moduleMap, reverseMap, remainingDepth - 1, visited))
-            .ToList();
+            .ConvertAll(c => BuildTree(c, moduleMap, reverseMap, remainingDepth - 1, visited));
 
         visited.Remove(moduleName); // Allow the same module to appear in different branches
 

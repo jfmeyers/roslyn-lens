@@ -32,7 +32,7 @@ public static class AnalyzeDataFlowTool
             analysis = model.AnalyzeDataFlow(arrow.Expression);
         }
 
-        if (analysis is null || !analysis.Succeeded)
+        if (analysis?.Succeeded != true)
             return Json.Serialize(new { error = "Data flow analysis failed" });
 
         var result = new DataFlowResult(

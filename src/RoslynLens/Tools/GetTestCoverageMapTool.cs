@@ -27,8 +27,8 @@ public static class GetTestCoverageMapTool
         var testClassMap = await BuildTestClassMapAsync(workspace, solution, ct);
 
         var productionProjects = solution.Projects
-            .Where(p => !IsTestProject(p.Name))
-            .Where(p => projectFilter is null || p.Name.Equals(projectFilter, StringComparison.OrdinalIgnoreCase))
+            .Where(p => !IsTestProject(p.Name)
+                && (projectFilter is null || p.Name.Equals(projectFilter, StringComparison.OrdinalIgnoreCase)))
             .ToList();
 
         var (entries, covered, uncovered) = await MatchProductionTypesAsync(
@@ -51,8 +51,10 @@ public static class GetTestCoverageMapTool
             if (compilation is null) continue;
 
             await foreach (var (root, _) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
+            {
                 foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
                     testClassMap.TryAdd(typeDecl.Identifier.Text, (root.SyntaxTree.FilePath, testProject.Name));
+            }
         }
 
         return testClassMap;

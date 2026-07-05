@@ -359,8 +359,8 @@ public static class ValidateGranitConventionsTool
 
         var typeOfArgs = classDecl.AttributeLists
             .SelectMany(al => al.Attributes)
-            .Where(a => a.Name.ToString() is "DependsOn" or "DependsOnAttribute")
-            .Where(a => a.ArgumentList is not null)
+            .Where(a => a.Name.ToString() is "DependsOn" or "DependsOnAttribute"
+                && a.ArgumentList is not null)
             .SelectMany(a => a.ArgumentList!.Arguments)
             .Select(arg => arg.Expression)
             .OfType<TypeOfExpressionSyntax>();

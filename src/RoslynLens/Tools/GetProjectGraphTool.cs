@@ -73,7 +73,7 @@ public static class GetProjectGraphTool
         {
             ct.ThrowIfCancellationRequested();
 
-            if (matchingNames is not null && !matchingNames.Contains(project.Name))
+            if (matchingNames?.Contains(project.Name) == false)
                 continue;
 
             var references = project.ProjectReferences

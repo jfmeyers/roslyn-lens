@@ -42,7 +42,9 @@ public static class DetectCircularDependenciesTool
         {
             if (projectFilter is not null &&
                 !project.Name.Contains(projectFilter, StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
+            }
 
             var refs = project.ProjectReferences
                 .Select(r => solution.GetProject(r.ProjectId)?.Name)

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,11 @@ namespace RoslynLens;
 /// </summary>
 public static class ToolInvocationLogging
 {
+    // This is the outermost tool-call boundary: logging a failure with its correlation id here
+    // and rethrowing is intentional — nothing above re-logs it, and wrapping would discard the
+    // original exception type the MCP dispatcher relies on to build the JSON-RPC error.
+    [SuppressMessage("Major Code Smell", "S2139:Exceptions should be either logged or rethrown but not both",
+        Justification = "Outermost boundary filter: the correlation-scoped failure log is the purpose of this filter, and the original exception must propagate unwrapped.")]
     public static IMcpServerBuilder WithToolInvocationLogging(this IMcpServerBuilder builder)
     {
         return builder.WithRequestFilters(filters =>
@@ -26,22 +32,27 @@ public static class ToolInvocationLogging
 
                 using var scope = logger?.BeginScope("cid:{CorrelationId}", correlationId);
                 var stopwatch = Stopwatch.StartNew();
-                logger?.LogInformation("→ {Tool} started [cid {CorrelationId}]", toolName, correlationId);
+                if (logger?.IsEnabled(LogLevel.Information) == true)
+                    logger.LogInformation("→ {Tool} started [cid {CorrelationId}]", toolName, correlationId);
 
                 try
                 {
                     var result = await next(ctx, ct);
                     stopwatch.Stop();
-                    logger?.LogInformation(
-                        "← {Tool} completed in {ElapsedMs}ms [cid {CorrelationId}]",
-                        toolName, stopwatch.ElapsedMilliseconds, correlationId);
+                    if (logger?.IsEnabled(LogLevel.Information) == true)
+                    {
+                        logger.LogInformation(
+                            "← {Tool} completed in {ElapsedMs}ms [cid {CorrelationId}]",
+                            toolName, stopwatch.ElapsedMilliseconds, correlationId);
+                    }
+
                     return result;
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
                     stopwatch.Stop();
                     logger?.LogWarning(
-                        "⊘ {Tool} cancelled after {ElapsedMs}ms [cid {CorrelationId}]",
+                        ex, "⊘ {Tool} cancelled after {ElapsedMs}ms [cid {CorrelationId}]",
                         toolName, stopwatch.ElapsedMilliseconds, correlationId);
                     throw;
                 }

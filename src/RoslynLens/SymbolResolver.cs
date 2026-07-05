@@ -77,8 +77,7 @@ public static class SymbolResolver
             var match = candidates.FirstOrDefault(s =>
             {
                 var loc = GetLocation(s);
-                return loc.FilePath is not null &&
-                       loc.FilePath.Replace('\\', '/').EndsWith(normalized, StringComparison.OrdinalIgnoreCase);
+                return loc.FilePath?.Replace('\\', '/').EndsWith(normalized, StringComparison.OrdinalIgnoreCase) == true;
             });
             if (match is not null) return match;
         }
