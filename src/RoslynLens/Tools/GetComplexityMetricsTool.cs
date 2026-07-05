@@ -21,9 +21,7 @@ public static class GetComplexityMetricsTool
         CancellationToken ct = default)
     {
         var status = workspace.EnsureReadyOrStatus(ct);
-        if (status is not null) return status;
-
-        return scope.ToLowerInvariant() switch
+        return status ?? scope.ToLowerInvariant() switch
         {
             "type" => await AnalyzeTypeAsync(workspace, name, threshold, maxResults, ct),
             "project" => await AnalyzeProjectAsync(workspace, name, threshold, maxResults, ct),

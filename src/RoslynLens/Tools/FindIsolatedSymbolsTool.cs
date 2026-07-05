@@ -116,9 +116,13 @@ public static class FindIsolatedSymbolsTool
             if (compilation is null) continue;
 
             await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
+            {
                 foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                {
                     if (model.GetDeclaredSymbol(typeDecl, ct) is INamedTypeSymbol type)
                         names.Add(type.ToDisplayString());
+                }
+            }
         }
 
         return names;

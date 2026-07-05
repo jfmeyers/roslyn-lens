@@ -36,9 +36,9 @@ public static class GetTypeOverviewTool
     private static PublicApiResult BuildPublicApi(INamedTypeSymbol typeSymbol)
     {
         var members = typeSymbol.GetMembers()
-            .Where(m => m.DeclaredAccessibility == Accessibility.Public)
-            .Where(m => !m.IsImplicitlyDeclared)
-            .Where(m => m is not IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
+            .Where(m => m.DeclaredAccessibility == Accessibility.Public
+                && !m.IsImplicitlyDeclared
+                && m is not IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
             .Select(ToApiMember).ToList();
         return new PublicApiResult(typeSymbol.ToDisplayString(), members, members.Count);
     }

@@ -24,7 +24,7 @@ public static class AnalyzeControlFlowTool
             return Json.Serialize(new { error = "Control flow analysis requires a block body with statements" });
 
         var analysis = model.AnalyzeControlFlow(block.Statements.First(), block.Statements.Last());
-        if (analysis is null || !analysis.Succeeded)
+        if (analysis?.Succeeded != true)
             return Json.Serialize(new { error = "Control flow analysis failed" });
 
         var result = new ControlFlowResult(

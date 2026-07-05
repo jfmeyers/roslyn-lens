@@ -52,13 +52,8 @@ public sealed class MissingConfigureAwaitDetector : IAntiPatternDetector
     private static bool HasConfigureAwait(ExpressionSyntax expression)
     {
         // The expression should be an invocation of .ConfigureAwait(...)
-        if (expression is InvocationExpressionSyntax invocation &&
+        return expression is InvocationExpressionSyntax invocation &&
             invocation.Expression is MemberAccessExpressionSyntax access &&
-            access.Name.Identifier.Text == "ConfigureAwait")
-        {
-            return true;
-        }
-
-        return false;
+            access.Name.Identifier.Text == "ConfigureAwait";
     }
 }

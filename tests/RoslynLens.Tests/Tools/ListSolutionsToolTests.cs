@@ -29,7 +29,7 @@ public class ListSolutionsToolTests : IDisposable
             WorkspaceInitializer.DiscoveredSolutions = [pathA, pathB];
             WorkspaceInitializer.SolutionPath = pathA;
 
-            var result = await ListSolutionsTool.ExecuteAsync(_workspace, TestContext.Current.CancellationToken);
+            var result = await ListSolutionsTool.ExecuteAsync();
 
             using var doc = JsonDocument.Parse(result);
             var root = doc.RootElement;
@@ -59,7 +59,7 @@ public class ListSolutionsToolTests : IDisposable
         {
             WorkspaceInitializer.DiscoveredSolutions = [];
 
-            var result = await ListSolutionsTool.ExecuteAsync(_workspace, TestContext.Current.CancellationToken);
+            var result = await ListSolutionsTool.ExecuteAsync();
 
             using var doc = JsonDocument.Parse(result);
             doc.RootElement.GetProperty("Solutions").GetArrayLength().ShouldBe(0);
@@ -85,7 +85,7 @@ public class ListSolutionsToolTests : IDisposable
             WorkspaceInitializer.DiscoveredSolutions = [pathA, pathB, pathC];
             WorkspaceInitializer.SolutionPath = pathA;
 
-            var result = await ListSolutionsTool.ExecuteAsync(_workspace, TestContext.Current.CancellationToken);
+            var result = await ListSolutionsTool.ExecuteAsync();
 
             using var doc = JsonDocument.Parse(result);
             var hint = doc.RootElement.GetProperty("Hint").GetString();

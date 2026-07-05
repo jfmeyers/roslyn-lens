@@ -78,7 +78,7 @@ public static class DetectAntiPatternsTool
 
         var normalizedFile = file.Replace('\\', '/');
         var treePath = tree.FilePath?.Replace('\\', '/');
-        return treePath is not null && treePath.EndsWith(normalizedFile, StringComparison.OrdinalIgnoreCase);
+        return treePath?.EndsWith(normalizedFile, StringComparison.OrdinalIgnoreCase) == true;
     }
 
     private static void AnalyzeTree(

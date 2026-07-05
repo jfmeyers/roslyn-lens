@@ -12,7 +12,6 @@ public sealed class WorkspaceManager : IDisposable
 {
     private const int LazyLoadThreshold = 10;
 
-    private readonly RoslynLensConfig _config;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly ConcurrentDictionary<ProjectId, (Compilation Compilation, long AccessCount)> _compilationCache = new();
     private long _accessCounter;
@@ -25,11 +24,11 @@ public sealed class WorkspaceManager : IDisposable
     private FileSystemWatcher? _projectWatcher;
     private string? _solutionDirectory;
 
-    public RoslynLensConfig Config => _config;
+    public RoslynLensConfig Config { get; }
 
     public WorkspaceManager(RoslynLensConfig config)
     {
-        _config = config;
+        Config = config;
     }
 
     public WorkspaceState State { get; private set; } = WorkspaceState.NotStarted;
@@ -126,7 +125,7 @@ public sealed class WorkspaceManager : IDisposable
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                cts.CancelAfter(TimeSpan.FromSeconds(_config.TimeoutSeconds));
+                cts.CancelAfter(TimeSpan.FromSeconds(Config.TimeoutSeconds));
                 _readySignal.Task.Wait(cts.Token);
             }
             catch (OperationCanceledException)
@@ -190,7 +189,7 @@ public sealed class WorkspaceManager : IDisposable
         _compilationCache[project.Id] = (compilation, accessCount);
 
         // Evict LRU if over capacity
-        if (_compilationCache.Count > _config.CacheSize)
+        if (_compilationCache.Count > Config.CacheSize)
         {
             var lruKey = _compilationCache
                 .OrderBy(kvp => kvp.Value.AccessCount)

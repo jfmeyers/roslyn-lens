@@ -150,7 +150,7 @@ public static class FindSurprisingDependenciesTool
         double hubThreshold = meanInDegree + stdInDegree;
 
         double medianOutDegree = outDegree.Count > 0
-            ? outDegree.Values.OrderBy(x => x).ElementAt(outDegree.Count / 2)
+            ? outDegree.Values.Order().ElementAt(outDegree.Count / 2)
             : 0;
 
         var scored = new List<(int Score, List<string> Reasons, string From, string To, int RefCount)>();
@@ -202,14 +202,14 @@ public static class FindSurprisingDependenciesTool
         var tgtIn = inDegree.GetValueOrDefault(key.To);
         if (tgtIn > hubThreshold)
         {
-            score += 1;
+            score++;
             reasons.Add($"hub target ({tgtIn} incoming deps)");
         }
 
         var distance = ComputeNamespaceDistance(key.From, key.To);
         if (distance >= 3)
         {
-            score += 1;
+            score++;
             reasons.Add($"distant namespaces (depth diff {distance})");
         }
 

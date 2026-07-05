@@ -33,7 +33,9 @@ public sealed class DtoSuffixDetector : IAntiPatternDetector
 
             if (!name.EndsWith("Dto", StringComparison.Ordinal) &&
                 !name.EndsWith("DTO", StringComparison.Ordinal))
+            {
                 continue;
+            }
 
             var line = typeDecl.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
             var kind = typeDecl is RecordDeclarationSyntax ? "record" : "class";

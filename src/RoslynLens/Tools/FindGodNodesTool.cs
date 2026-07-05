@@ -38,10 +38,10 @@ public static class FindGodNodesTool
         if (candidates.Count == 0)
             return Json.Serialize(new GodNodesResult([], 0, 0, 0, 0));
 
-        var refCounts = candidates.Select(c => (double)c.RefCount).ToList();
+        var refCounts = candidates.ConvertAll(c => (double)c.RefCount);
         var mean = refCounts.Average();
         var stdDev = Math.Sqrt(refCounts.Average(x => Math.Pow(x - mean, 2)));
-        var cutoff = mean + threshold * stdDev;
+        var cutoff = mean + (threshold * stdDev);
 
         var godNodes = candidates
             .Where(c => c.RefCount >= minRefs && c.RefCount >= cutoff)
@@ -73,8 +73,10 @@ public static class FindGodNodesTool
             if (compilation is null) continue;
 
             await foreach (var (root, model) in TypeStructureHelper.GetTreeRootsAsync(compilation, ct))
+            {
                 foreach (var symbol in CollectSymbols(root, model, kind, ct))
                     await ProcessSymbolAsync(symbol, solution, project.Name, seen, candidates, ct);
+            }
         }
 
         return candidates;

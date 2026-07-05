@@ -23,10 +23,7 @@ public static class SolutionDiscovery
             return explicitPath;
 
         var envPath = ParseEnvPath();
-        if (envPath is not null)
-            return envPath;
-
-        return BfsDiscovery(Directory.GetCurrentDirectory());
+        return envPath ?? BfsDiscovery(Directory.GetCurrentDirectory());
     }
 
     // Lets a host (e.g. the MCP bundle) point at a solution without passing CLI args.
@@ -86,7 +83,7 @@ public static class SolutionDiscovery
             {
                 bestMatch = ScanDirectoryForSolution(dirPath, depth, bestMatch, ref bestDepth);
 
-                if (bestMatch is not null && bestMatch.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase) && depth == bestDepth)
+                if (bestMatch?.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase) == true && depth == bestDepth)
                     return bestMatch;
 
                 EnqueueSubDirectories(queue, dirPath, depth);

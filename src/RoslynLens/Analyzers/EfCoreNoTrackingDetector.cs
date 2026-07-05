@@ -89,13 +89,8 @@ public sealed class EfCoreNoTrackingDetector : IAntiPatternDetector
         }
 
         // Also check direct member access without invocation
-        if (current is MemberAccessExpressionSyntax ma &&
-            ma.Name.Identifier.Text is "AsNoTracking" or "AsNoTrackingWithIdentityResolution")
-        {
-            return true;
-        }
-
-        return false;
+        return current is MemberAccessExpressionSyntax ma &&
+            ma.Name.Identifier.Text is "AsNoTracking" or "AsNoTrackingWithIdentityResolution";
     }
 
     private static bool LooksLikeEfCoreQuery(ExpressionSyntax expression, SemanticModel model, CancellationToken ct)
